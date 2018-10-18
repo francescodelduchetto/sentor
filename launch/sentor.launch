@@ -1,0 +1,11 @@
+<launch>
+<arg name="topics" default=""/>
+
+<node
+	name="sentor"
+	pkg="sentor"
+	type="sentor_node.py"
+	output="screen">
+	<param name="~topics" value="$(arg topics)" />
+</node>
+</launch>
