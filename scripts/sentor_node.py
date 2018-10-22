@@ -5,6 +5,10 @@ import rostopic
 import signal
 import rospy
 import time
+import sys
+
+
+unpublished_topics_indexes = []
 
 def __signal_handler(signum, frame):
     print "stopped."
@@ -21,13 +25,18 @@ if __name__ == "__main__":
     print "Monitoring topics:"
     for n, topic in enumerate(topics):
         print "\t-", topic,
-        msg_class, real_topic, _ = rostopic.get_topic_class(topic, blocking=False)
-        topic_type, _, _ = rostopic.get_topic_type(topic, blocking=False)
-        if real_topic is None:
-            rospy.logwarn("Topic %s is not published" % topic)
-            continue
+        try:
+            msg_class, real_topic, _ = rostopic.get_topic_class(topic, blocking=False)
+            topic_type, _, _ = rostopic.get_topic_type(topic, blocking=False)
+        except ROSTopicException as e:
+            print " "
+            rospy.logwarn("Topic %s type cannot be determined, or ROS master cannot be contacted" % topic)
+        else:
+            print real_topic, "\t", topic_type
+            if real_topic is None:
+                rospy.logwarn("Topic %s is not published" % topic)
+                continue
 
-        print real_topic, "\t", topic_type
 
         rts.append( ROSTopicHz(1000) )
 
@@ -37,15 +46,20 @@ if __name__ == "__main__":
 
     rate = rospy.Rate(1) #5Hz
     while not rospy.is_shutdown():
+        sys.stdout.write("\r")
         for n, rt in enumerate(rts):
-            print topics[n],
-
             res = rt.get_hz()
             if res is None:
-                rospy.logwarn("Topic %s is not published anymore" % topics[n])
+                if n not in unpublished_topics_indexes:
+                    rospy.logwarn("Topic %s is not published anymore" % topics[n])
+                    unpublished_topics_indexes.append(n)
             else:
+                sys.stdout.write(topics[n] + ": ")
                 (hz, min_delta, max_delta, std_dev, window_size) = res
-                print "average rate: %.3f\n\tmin: %.3fs max: %.3fs std dev: %.5fs window: %s"%\
-                    (hz, min_delta, max_delta, std_dev, window_size)
+                sys.stdout.write("average rate: %.2f \t" % hz)
+
+                if n in unpublished_topics_indexes:
+                    unpublished_topics_indexes.remove(n)
+        sys.stdout.flush()
 
         rate.sleep()
