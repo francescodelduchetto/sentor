@@ -1,18 +1,19 @@
 #!/usr/bin/env python
-from os import _exit
 from sentor.ROSTopicHz import ROSTopicHz
 import rostopic
 import signal
 import rospy
 import time
+import math
 import sys
+import os
 
 
 unpublished_topics_indexes = []
 
 def __signal_handler(signum, frame):
     print "stopped."
-    _exit(signal.SIGTERM)
+    os._exit(signal.SIGTERM)
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, __signal_handler)
@@ -45,8 +46,12 @@ if __name__ == "__main__":
     time.sleep(1)
 
     rate = rospy.Rate(1) #5Hz
+    line_to_print = ""
     while not rospy.is_shutdown():
-        sys.stdout.write("\r")
+        sys.stdout.write('\r')
+        sys.stdout.flush()
+        # print "lines", lines, len(line_to_print), int(columns), tabs
+        line_to_print = ""
         for n, rt in enumerate(rts):
             res = rt.get_hz()
             if res is None:
@@ -54,12 +59,13 @@ if __name__ == "__main__":
                     rospy.logwarn("Topic %s is not published anymore" % topics[n])
                     unpublished_topics_indexes.append(n)
             else:
-                sys.stdout.write(topics[n] + ": ")
+                line_to_print += topics[n] + ": "
                 (hz, min_delta, max_delta, std_dev, window_size) = res
-                sys.stdout.write("average rate: %.2f \t" % hz)
+                line_to_print += "%.1f  " % hz
 
                 if n in unpublished_topics_indexes:
                     unpublished_topics_indexes.remove(n)
+        sys.stdout.write(line_to_print)
         sys.stdout.flush()
 
         rate.sleep()
