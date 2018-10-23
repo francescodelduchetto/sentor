@@ -18,16 +18,12 @@ def __signal_handler(signum, frame):
     print "stopped."
     os._exit(signal.SIGTERM)
 
-
-
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, __signal_handler)
     rospy.init_node("sentor")
 
     topics = rospy.get_param("~topics", "")
     topics = topics.split(" ")
-
-
 
     rths = []
     rtfs = []
@@ -39,30 +35,36 @@ if __name__ == "__main__":
             msg_class, real_topic, _ = rostopic.get_topic_class(topic_name, blocking=False)
             topic_type, _, _ = rostopic.get_topic_type(topic_name, blocking=False)
         except ROSTopicException as e:
-            print " "
+            print " ",
             rospy.logwarn("Topic %s type cannot be determined, or ROS master cannot be contacted" % topic_name)
         else:
-            print "\t", real_topic, "\t", topic_type
+            print "\t", topic_type,
             if real_topic is None:
+                print " "
                 rospy.logwarn("Topic %s is not published" % topic_name)
                 continue
 
-        rths.append( ROSTopicHz(topic_name, 1000) )
+        if expression == "":
+            print "\t = monitoring hz"
+            rths.append( ROSTopicHz(topic_name, 1000) )
 
-        rospy.Subscriber(real_topic, msg_class, rths[n].callback_hz)
+            rospy.Subscriber(real_topic, msg_class, rths[n].callback_hz)
 
         # if there is something else then we also have a filter on the message
-        if expression != "":
+        else:
             lambdas = ROSTopicFilter.get_lambdas(expression)
 
+            print "\n\t  = monitoring expressions:",
             for (expression, parameter, lambda_filter) in lambdas:
-                print "\t\t monitoring expression:", expression #, parameter, lambda_filter
 
                 if parameter != "":
+                    print expression, ",", #, parameter, lambda_filter
                     filter = ROSTopicFilter(topic_name, expression, parameter, lambda_filter)
                     rtfs.append( filter )
 
                     rospy.Subscriber(real_topic, msg_class, filter.callback_filter)
+
+            print ""
 
 
     time.sleep(1)
