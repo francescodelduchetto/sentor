@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
     time.sleep(1)
 
-    rate = rospy.Rate(1) #5Hz
+    rate = rospy.Rate(1) #1Hz
     line_to_print = ""
     while not rospy.is_shutdown():
         sys.stdout.write('\r')
