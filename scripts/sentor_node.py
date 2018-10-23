@@ -28,7 +28,7 @@ if __name__ == "__main__":
     rths = []
     rtfs = []
     print "Monitoring topics:"
-    for n, topic in enumerate(topics):
+    for topic in topics:
         topic_name, expression = topic.split(".")[0], ".".join(topic.split(".")[1:])
         print "\t-", topic_name,
         try:
@@ -46,9 +46,10 @@ if __name__ == "__main__":
 
         if expression == "":
             print "\t = monitoring hz"
-            rths.append( ROSTopicHz(topic_name, 1000) )
+            hz = ROSTopicHz(topic_name, 1000)
+            rths.append(hz)
 
-            rospy.Subscriber(real_topic, msg_class, rths[n].callback_hz)
+            rospy.Subscriber(real_topic, msg_class, hz.callback_hz)
 
         # if there is something else then we also have a filter on the message
         else:
