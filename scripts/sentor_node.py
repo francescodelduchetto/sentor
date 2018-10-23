@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
             rospy.Subscriber(real_topic, msg_class, hz.callback_hz)
 
-        # if there is something else then we also have a filter on the message
+        # if there is something else then we have a filter on the message
         else:
             lambdas = ROSTopicFilter.get_lambdas(expression)
 
