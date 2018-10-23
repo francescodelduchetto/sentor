@@ -9,14 +9,14 @@ class ROSTopicHz(object):
     """
     ROSTopicHz receives messages for a topic and computes frequency stats
     """
-    def __init__(self, window_size, filter_expr=None):
-        import threading
+    def __init__(self, topic_name, window_size, filter_expr=None):
         self.lock = threading.Lock()
         self.last_printed_tn = 0
         self.msg_t0 = -1.
         self.msg_tn = 0
         self.times =[]
         self.filter_expr = filter_expr
+        self.topic_name = topic_name
 
         # can't have infinite window size due to memory restrictions
         if window_size < 0:
