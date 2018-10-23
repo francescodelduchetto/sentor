@@ -21,10 +21,10 @@ class ROSTopicFilter(object):
             if "<=" in expression:
                 parameter, value = "".join(expression.split("<=")[0]), "".join(expression.split("<=")[-1])
                 lambdas.append( (expression, parameter, lambda x, value=value : float(x) <= float(value)) )
-            if ">=" in expression:
+            elif ">=" in expression:
                 parameter, value = "".join(expression.split(">=")[0]), "".join(expression.split(">=")[-1])
                 lambdas.append( (expression, parameter, lambda x, value=value : float(x) >= float(value)) )
-            if "==" in expression:
+            elif "==" in expression:
                 parameter, value = "".join(expression.split("==")[0]), "".join(expression.split("==")[-1])
                 try:
                     float(value)
@@ -32,7 +32,7 @@ class ROSTopicFilter(object):
                     lambdas.append( (expression, parameter, lambda x, value=value : str(x) == value) )
                 else:
                     lambdas.append( (expression, parameter, lambda x, value=value : float(x) == float(value)) )
-            if "!=" in expression:
+            elif "!=" in expression:
                 parameter, value = "".join(expression.split("!=")[0]), "".join(expression.split("!=")[-1])
                 try:
                     float(value)
@@ -40,13 +40,13 @@ class ROSTopicFilter(object):
                     lambdas.append( (expression, parameter, lambda x, value=value : str(x) != value) )
                 else:
                     lambdas.append( (expression, parameter, lambda x, value=value : float(x) != float(value)) )
-            if "<" in expression:
+            elif "<" in expression:
                 parameter, value = "".join(expression.split("<")[0]), "".join(expression.split("<")[-1])
                 lambdas.append( (expression, parameter, lambda x, value=value : float(x) < float(value)) )
-            if ">" in expression:
+            elif ">" in expression:
                 parameter, value = "".join(expression.split(">")[0]), "".join(expression.split(">")[-1])
                 lambdas.append( (expression, parameter, lambda x, value=value : float(x) > float(value)) )
-            if "=" in expression:
+            elif "=" in expression:
                 parameter, value = "".join(expression.split("=")[0]), "".join(expression.split("=")[-1])
                 try:
                     float(value)
