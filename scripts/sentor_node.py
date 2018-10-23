@@ -93,7 +93,7 @@ if __name__ == "__main__":
         for n, rtf in enumerate(rtfs):
             if rtf.is_filter_satisfied():
                 if n not in satisfied_filters_indexes:
-                    rospy.logwarn("Filter %s on topic %s is satisfied" % (rtf.expression, rtf.topic_name))
+                    rospy.logwarn("Expression %s on topic %s is satisfied" % (rtf.expression, rtf.topic_name))
                     satisfied_filters_indexes.append(n)
             else:
                 if n in satisfied_filters_indexes:
