@@ -42,7 +42,7 @@ if __name__ == "__main__":
             print " "
             rospy.logwarn("Topic %s type cannot be determined, or ROS master cannot be contacted" % topic_name)
         else:
-            print real_topic, "\t", topic_type
+            print "\t", real_topic, "\t", topic_type
             if real_topic is None:
                 rospy.logwarn("Topic %s is not published" % topic_name)
                 continue
