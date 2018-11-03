@@ -121,4 +121,4 @@ class ROSTopicHz(object):
             min_delta = min(self.times)
 
             self.last_printed_tn = self.msg_tn
-        return (rate, min_delta, max_delta, std_dev, n+1)
+        return rate

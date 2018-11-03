@@ -9,7 +9,10 @@ class ROSTopicFilter(object):
         self.parameter = parameter
         self.lambda_filter = lambda_filter
         self.filter_satisfied = False
+        self.unread_satisfied = False
         self.value_read = False
+        self.sat_callbacks = []
+        self.unsat_callbacks = []
 
     @staticmethod
     def get_lambdas(expression):
@@ -61,13 +64,43 @@ class ROSTopicFilter(object):
         for part in self.parameter.split("."):
             value = value.__getattribute__(part)
 
-        if self.value_read:
-            self.filter_satisfied = self.lambda_filter(value)
-            self.value_read = False
+        self.filter_satisfied = self.lambda_filter(value)
 
-        if not self.filter_satisfied and not self.value_read:
-            self.filter_satisfied = self.lambda_filter(value)
+        # if the last value was read: set value_read to False
+        if self.value_read:
+            self.value_read = False
+        # else if filter_satisfied
+        elif self.filter_satisfied:
+            self.unread_satisfied = True
+            # notify the listeners
+
+        if self.filter_satisfied:
+            for func in self.sat_callbacks:
+                func(self.expression)
+        else:
+            for func in self.unsat_callbacks:
+                func(self.expression)
+
+
+        # if not self.filter_satisfied and not self.value_read:
+        #     self.filter_satisfied = self.lambda_filter(value)
+
+        # print value, self.filter_satisfied, self.value_read
+
 
     def is_filter_satisfied(self):
         self.value_read = True
+
+        if self.unread_satisfied:
+            self.unread_satisfied = False
+            return True
+
         return self.filter_satisfied
+
+    def register_satisfied_cb(self, func):
+
+        self.sat_callbacks.append(func)
+
+    def register_unsatisfied_cb(self, func):
+
+        self.unsat_callbacks.append(func)
