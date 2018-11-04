@@ -126,7 +126,7 @@ class TopicMonitor(Thread):
         self._stop_event.clear()
 
     def kill_monitor(self):
-        self._kill_event.set()
+        self._killed_event.set()
 
     def lambda_satisfied_cb(self, msg):
         if not self._stop_event.isSet():

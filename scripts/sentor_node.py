@@ -18,19 +18,19 @@ topic_monitors = []
 event_pub = None
 
 def __signal_handler(signum, frame):
-    print "stopped."
-    kill_monitors()
-    os._exit(signal.SIGTERM)
-
     def kill_monitors():
         for topic_monitor in topic_monitors:
             topic_monitor.kill_monitor()
             topic_monitor.join()
+    print "stopped."
+    kill_monitors()
+    os._exit(signal.SIGTERM)
+
 
 def stop_monitoring(_):
     for topic_monitor in topic_monitors:
         topic_monitor.stop_monitor()
-        
+
     rospy.logwarn("sentor_node stopped monitoring")
     return
 
@@ -70,17 +70,18 @@ if __name__ == "__main__":
 
         topic_monitor = TopicMonitor(topic_name, expressions, event_callback)
 
-        # start monitoring
-        topic_monitor.start()
-
         topic_monitors.append(topic_monitor)
 
+    time.sleep(1)
+
+    # start monitoring
+    for topic_monitor in topic_monitors:
+        topic_monitor.start()
 
     while not rospy.is_shutdown():
         time.sleep(1)
 
 
-    stop_monitor(Empty())
 
 
 
