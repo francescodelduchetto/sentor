@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
         topic_monitors.append(topic_monitor)
 
-    time.sleep(1)
+    time.sleep(2)
 
     # start monitoring
     for topic_monitor in topic_monitors:
