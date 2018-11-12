@@ -132,8 +132,10 @@ class TopicMonitor(Thread):
         if not self._stop_event.isSet():
             if not msg in self.satisfied_expressions:
                 self.satisfied_expressions.append(msg)
+		print "sat", msg
 
     def lambda_unsatisfied_cb(self, msg):
         if not self._stop_event.isSet():
             if not msg in self.unsatisfied_expressions:
                 self.unsatisfied_expressions.append(msg)
+		print "unsat", msg
