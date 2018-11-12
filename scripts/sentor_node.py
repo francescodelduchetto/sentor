@@ -26,7 +26,6 @@ def __signal_handler(signum, frame):
     kill_monitors()
     os._exit(signal.SIGTERM)
 
-
 def stop_monitoring(_):
     for topic_monitor in topic_monitors:
         topic_monitor.stop_monitor()
@@ -72,7 +71,7 @@ if __name__ == "__main__":
 
         topic_monitors.append(topic_monitor)
 
-    time.sleep(2)
+    time.sleep(1)
 
     # start monitoring
     for topic_monitor in topic_monitors:
