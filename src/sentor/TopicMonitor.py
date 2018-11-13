@@ -112,7 +112,7 @@ class TopicMonitor(Thread):
                         self.event_callback("Expression %s on topic %s satisfied" % (expr, self.topic_name), "warn")
                         self.published_filters_list.append(expr)
 			#print "+", expr
-		    else:
+		    #else:
 			#print "=", expr
 
 
