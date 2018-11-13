@@ -1,7 +1,7 @@
 from sentor.ROSTopicHz import ROSTopicHz
 from sentor.ROSTopicFilter import ROSTopicFilter
 
-from threading import Thread, Event
+from threading import Thread, Event, Lock
 import rostopic
 import rospy
 import time
@@ -24,7 +24,7 @@ class TopicMonitor(Thread):
 
         self._stop_event = Event()
         self._killed_event = Event()
-
+	self._lock = Lock()
 
     def _instantiate_monitors(self):
         if self.is_instantiated: return True
@@ -105,16 +105,23 @@ class TopicMonitor(Thread):
                 if rate is not None and not self.is_latch and not self.is_topic_published:
                     self.is_topic_published = True
 
-                for _ in range(len(self.satisfied_expressions)):
+		self._lock.acquire()
+                while len(self.satisfied_expressions) > 0:
                     expr = self.satisfied_expressions.pop()
                     if not expr in self.published_filters_list:
                         self.event_callback("Expression %s on topic %s satisfied" % (expr, self.topic_name), "warn")
                         self.published_filters_list.append(expr)
+			#print "+", expr
+		    else:
+			#print "=", expr
 
-                for _ in range(len(self.unsatisfied_expressions)):
+
+                while len(self.unsatisfied_expressions) > 0:
                     expr = self.unsatisfied_expressions.pop()
                     if expr in self.published_filters_list:
                         self.published_filters_list.remove(expr)
+			#print "-", expr
+		self._lock.release()
 
                 time.sleep(1)
             time.sleep(1)
@@ -130,12 +137,16 @@ class TopicMonitor(Thread):
 
     def lambda_satisfied_cb(self, msg):
         if not self._stop_event.isSet():
+	    self._lock.acquire()
             if not msg in self.satisfied_expressions:
                 self.satisfied_expressions.append(msg)
-		print "sat", msg
+		#print "sat", msg
+	    self._lock.release()
 
     def lambda_unsatisfied_cb(self, msg):
         if not self._stop_event.isSet():
+	    self._lock.acquire()
             if not msg in self.unsatisfied_expressions and msg in self.satisfied_expressions:
                 self.unsatisfied_expressions.append(msg)
-		print "unsat", msg
+		#print "unsat", msg
+	    self._lock.release()
