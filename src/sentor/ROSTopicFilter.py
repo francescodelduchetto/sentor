@@ -3,68 +3,29 @@ import rospy
 
 class ROSTopicFilter(object):
 
-    def __init__(self, topic_name, expression, parameter, lambda_filter):
+    def __init__(self, topic_name, lambda_fn_str):
         self.topic_name = topic_name
-        self.expression = expression
-        self.parameter = parameter
-        self.lambda_filter = lambda_filter
+        self.lambda_fn_str = lambda_fn_str
+        self.lambda_fn = None
+        try:
+            self.lambda_fn = eval(self.lambda_fn_str)
+        except Exception as e:
+            rospy.logerr("Error evaluating lambda function %s : %s" % (self.lambda_fn_str, e))
+
         self.filter_satisfied = False
         self.unread_satisfied = False
         self.value_read = False
         self.sat_callbacks = []
         self.unsat_callbacks = []
 
-    @staticmethod
-    def get_lambdas(expression):
-
-        expression_list = expression.split(",")
-
-        lambdas = []
-        for expression in expression_list:
-            if "<=" in expression:
-                parameter, value = "".join(expression.split("<=")[0]), "".join(expression.split("<=")[-1])
-                lambdas.append( (expression, parameter, lambda x, value=value : float(x) <= float(value)) )
-            elif ">=" in expression:
-                parameter, value = "".join(expression.split(">=")[0]), "".join(expression.split(">=")[-1])
-                lambdas.append( (expression, parameter, lambda x, value=value : float(x) >= float(value)) )
-            elif "==" in expression:
-                parameter, value = "".join(expression.split("==")[0]), "".join(expression.split("==")[-1])
-                try:
-                    float(value)
-                except ValueError:
-                    lambdas.append( (expression, parameter, lambda x, value=value : str(x) == value) )
-                else:
-                    lambdas.append( (expression, parameter, lambda x, value=value : float(x) == float(value)) )
-            elif "!=" in expression:
-                parameter, value = "".join(expression.split("!=")[0]), "".join(expression.split("!=")[-1])
-                try:
-                    float(value)
-                except ValueError:
-                    lambdas.append( (expression, parameter, lambda x, value=value : str(x) != value) )
-                else:
-                    lambdas.append( (expression, parameter, lambda x, value=value : float(x) != float(value)) )
-            elif "<" in expression:
-                parameter, value = "".join(expression.split("<")[0]), "".join(expression.split("<")[-1])
-                lambdas.append( (expression, parameter, lambda x, value=value : float(x) < float(value)) )
-            elif ">" in expression:
-                parameter, value = "".join(expression.split(">")[0]), "".join(expression.split(">")[-1])
-                lambdas.append( (expression, parameter, lambda x, value=value : float(x) > float(value)) )
-            elif "=" in expression:
-                parameter, value = "".join(expression.split("=")[0]), "".join(expression.split("=")[-1])
-                try:
-                    float(value)
-                except ValueError:
-                    lambdas.append( (expression, parameter, lambda x, value=value : str(x) == value) )
-                else:
-                    lambdas.append( (expression, parameter, lambda x, value=value : float(x) == float(value)) )
-        return lambdas
-
     def callback_filter(self, msg):
-        value = msg
-        for part in self.parameter.split("."):
-            value = value.__getattribute__(part)
+        if self.lambda_fn is None:
+            return
 
-        self.filter_satisfied = self.lambda_filter(value)
+        try:
+            self.filter_satisfied = self.lambda_fn(msg)
+        except Exception as e:
+            rospy.logwarn("Exception while evaluating %s: %s" % (self.lambda_fn_str, e))
 
         # if the last value was read: set value_read to False
         if self.value_read:
@@ -76,14 +37,14 @@ class ROSTopicFilter(object):
 
         if self.filter_satisfied:
             for func in self.sat_callbacks:
-                func(self.expression)
+                func(self.lambda_fn_str)
         else:
             for func in self.unsat_callbacks:
-                func(self.expression)
+                func(self.lambda_fn_str)
 
 
         # if not self.filter_satisfied and not self.value_read:
-        #     self.filter_satisfied = self.lambda_filter(value)
+        #     self.filter_satisfied = self.lambda_fn(value)
 
         # print value, self.filter_satisfied, self.value_read
 
