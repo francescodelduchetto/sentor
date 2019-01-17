@@ -24,9 +24,12 @@ def __signal_handler(signum, frame):
     def kill_monitors():
         for topic_monitor in topic_monitors:
             topic_monitor.kill_monitor()
+    def join_monitors():
+        for topic_monitor in topic_monitors:
             topic_monitor.join()
-    print "stopped."
     kill_monitors()
+    join_monitors()
+    print "stopped."
     os._exit(signal.SIGTERM)
 
 def stop_monitoring(_):
