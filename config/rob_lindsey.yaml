@@ -50,5 +50,5 @@
     - 'lambda msg : msg.level == 2'
   timeout : 3
 
-- name : '/interface/buttonPressedWhileDisabled'
-  signal_when : 'published'
+#- name : '/interface/buttonPressedWhileDisabled'
+#  signal_when : 'published'

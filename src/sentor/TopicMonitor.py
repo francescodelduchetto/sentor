@@ -75,12 +75,12 @@ class TopicMonitor(Thread):
 
         # if there is something else then we have a filter on the message
         if len(self.signal_lambdas):
-            print "Signaling expressions for "+ bcolors.OKBLUE + self.topic_name + bcolors.ENDC + " ("+ bcolors.BOLD+"timeout: %s seconds" %  self.timeout + bcolors.ENDC +")\n\t" ,
+            print "Signaling expressions for "+ bcolors.OKBLUE + self.topic_name + bcolors.ENDC + " ("+ bcolors.BOLD+"timeout: %s seconds" %  self.timeout + bcolors.ENDC +"):"
 
             self.lambda_monitor_list = []
             for lambda_fn_str in self.signal_lambdas:
                 if lambda_fn_str != "":
-                    print bcolors.OKGREEN + lambda_fn_str + bcolors.ENDC + "; ",
+                    print "\t" + bcolors.OKGREEN + lambda_fn_str + bcolors.ENDC
                     lambda_monitor = self._instantiate_lambda_monitor(real_topic, msg_class, lambda_fn_str)
 
                     # register cb that notifies when the lambda function is True
@@ -169,7 +169,7 @@ class TopicMonitor(Thread):
                 #         #print "-", expr
                 # self._lock.release()
 
-                time.sleep(0.1)
+                time.sleep(0.3)
             time.sleep(1)
 
     def lambda_satisfied_cb(self, msg):
@@ -177,7 +177,7 @@ class TopicMonitor(Thread):
             if not msg in self.sat_expressions_timer.keys():
                 # self.satisfied_expressions.append(msg)
                 def cb(_):
-                    self.event_callback("Expression %s for %s seconds on topic %s satisfied" % (msg, self.timeout, self.topic_name), "warn")
+                    self.event_callback("Expression '%s' for %s seconds on topic %s satisfied" % (msg, self.timeout, self.topic_name), "warn")
 
                 self._lock.acquire()
                 self.sat_expressions_timer.update({msg: rospy.Timer(rospy.Duration.from_sec(self.timeout), cb, oneshot=True)})
