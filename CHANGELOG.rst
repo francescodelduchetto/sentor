@@ -2,8 +2,8 @@
 Changelog for package sentor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.0.1 (2019-01-19)
+------------------
 * Merge pull request `#1 <https://github.com/LCAS/sentor/issues/1>`_ from LCAS/2.0
   Merging 2.0 into master with some modifications for release
 * prepare for installation
