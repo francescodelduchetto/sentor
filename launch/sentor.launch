@@ -1,11 +1,13 @@
 <launch>
 <arg name="topics" default=""/>
+<arg name="config_file" default=""/>
 
 <node
 	name="sentor"
 	pkg="sentor"
 	type="sentor_node.py"
 	output="screen">
-	<param name="~topics" value="$(arg topics)" />
+	<!-- <param name="~topics" value="$(arg topics)" /> -->
+	<param name="~config_file" value="$(arg config_file)" />
 </node>
 </launch>

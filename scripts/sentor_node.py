@@ -2,13 +2,16 @@
 from sentor.TopicMonitor import TopicMonitor
 from std_msgs.msg import String
 from std_srvs.srv import Empty
+import pprint
 import signal
 import rospy
 import time
+import yaml
 import sys
 import os
 
 # TODO nice printing of frequency of the topic with curses
+# TODO consider timeout
 
 unpublished_topics_indexes = []
 satisfied_filters_indexes = []
@@ -21,9 +24,12 @@ def __signal_handler(signum, frame):
     def kill_monitors():
         for topic_monitor in topic_monitors:
             topic_monitor.kill_monitor()
+    def join_monitors():
+        for topic_monitor in topic_monitors:
             topic_monitor.join()
-    print "stopped."
     kill_monitors()
+    join_monitors()
+    print "stopped."
     os._exit(signal.SIGTERM)
 
 def stop_monitoring(_):
@@ -54,8 +60,15 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, __signal_handler)
     rospy.init_node("sentor")
 
-    topics = rospy.get_param("~topics", "")
-    topics = topics.split(" ")
+    config_file = rospy.get_param("~config_file", "")
+
+    try:
+        topics = yaml.load(file(config_file, 'r'))
+    except Exception as e:
+        rospy.logerr("No configuration file provided: %s" % e)
+        topics = []
+    # else:
+    #     pprint.pprint(topics)
 
     stop_srv = rospy.Service('/sentor/stop_monitor', Empty, stop_monitoring)
     start_srv = rospy.Service('/sentor/start_monitor', Empty, start_monitoring)
@@ -65,9 +78,23 @@ if __name__ == "__main__":
     topic_monitors = []
     print "Monitoring topics:"
     for topic in topics:
-        topic_name, expressions = topic.split(".")[0], ".".join(topic.split(".")[1:])
+        try:
+            topic_name = topic["name"]
+        except Exception as e:
+            rospy.logerr("topic name is not specified for entry %s" % topic)
+            continue
 
-        topic_monitor = TopicMonitor(topic_name, expressions, event_callback)
+        signal_when = ''
+        signal_lambdas = []
+        timeout = 0
+        if 'signal_when' in topic.keys():
+            signal_when = topic['signal_when']
+        if 'signal_lambdas' in topic.keys():
+            signal_lambdas = topic['signal_lambdas']
+        if 'timeout' in topic.keys():
+            timeout = topic['timeout']
+
+        topic_monitor = TopicMonitor(topic_name, signal_when, signal_lambdas, timeout, event_callback)
 
         topic_monitors.append(topic_monitor)
 
@@ -79,38 +106,3 @@ if __name__ == "__main__":
 
     while not rospy.is_shutdown():
         time.sleep(1)
-
-
-
-
-
-        # # sys.stdout.write('\r')
-        # # sys.stdout.flush()
-        # line_to_print = ""
-        # for n, rth in enumerate(rths):
-        #     res = rth.get_hz()
-        #     if res is None:
-        #         if n not in unpublished_topics_indexes:
-        #             rospy.logwarn("Topic %s is not published anymore" % rth.topic_name)
-        #             unpublished_topics_indexes.append(n)
-        #     else:
-        #         line_to_print += rth.topic_name + ": "
-        #         (hz, min_delta, max_delta, std_dev, window_size) = res
-        #         line_to_print += "%.1f  " % hz
-        #
-        #         if n in unpublished_topics_indexes:
-        #             unpublished_topics_indexes.remove(n)
-        #
-        # # sys.stdout.write(line_to_print)
-        # # sys.stdout.flush()
-        #
-        # for n, rtf in enumerate(rtfs):
-        #     if rtf.is_filter_satisfied():
-        #         if n not in satisfied_filters_indexes:
-        #             rospy.logwarn("Expression %s on topic %s is satisfied" % (rtf.expression, rtf.topic_name))
-        #             satisfied_filters_indexes.append(n)
-        #     else:
-        #         if n in satisfied_filters_indexes:
-        #             satisfied_filters_indexes.remove(n)
-        #
-        # rate.sleep()
