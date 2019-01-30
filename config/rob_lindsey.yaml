@@ -39,9 +39,9 @@
     - 'lambda msg : msg.bumper_pressed == True'
   timeout : 60
 
-- name : '/virtual_bumper_event'
-  signal_lambdas :
-    - 'lambda msg : msg.freeRunStarted == True'
+#- name : '/virtual_bumper_event'
+#  signal_lambdas :
+#    - 'lambda msg : msg.freeRunStarted == True'
 
 - name : '/diagnostics_toplevel_state'
   signal_when : 'not published'
