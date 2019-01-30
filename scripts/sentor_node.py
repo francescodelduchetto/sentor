@@ -46,14 +46,14 @@ def start_monitoring(_):
     rospy.logwarn("sentor_node started monitoring")
     return
 
-def event_callback(msg, type):
+def event_callback(string, type, msg=""):
     if type == "info":
-        rospy.loginfo(msg)
+        rospy.loginfo(string + '\n' + msg)
     elif type == "warn":
-        rospy.logwarn(msg)
+        rospy.logwarn(string + '\n' + msg)
 
     if event_pub is not None:
-        event_pub.publish(String("%s: %s" % (type, msg)))
+        event_pub.publish(String("%s: %s" % (type, string)))
 
 
 if __name__ == "__main__":
