@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
 <package>
   <name>sentor</name>
-  <version>0.1.1</version>
+  <version>2.0.1</version>
   <description>The sentor package, to check that sensor messages get published</description>
 
   <maintainer email="fdelduchetto@lincoln.ac.uk">Francesco Del Duchetto</maintainer>
+  <maintainer email="marc@hanheide.net">Marc Hanheide</maintainer>
 
   <license>MIT</license>
 
@@ -14,7 +15,9 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>rospy</build_depend>
+  <build_depend>rostopic</build_depend>
   <run_depend>rospy</run_depend>
+  <run_depend>rostopic</run_depend>
 
   <export>
     <!--<metapackage/> -->
