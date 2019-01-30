@@ -7,7 +7,7 @@ Continuously monitor topic messages. Sends warnings when certain conditions on t
 Example launch command:
 
 ```sh
-roslaunch sentor sentor_node.py config_file:=config/rob_lindsey.yaml
+roslaunch sentor sentor.launch config_file:=config/rob_lindsey.yaml
 ```
 
 ## Config
