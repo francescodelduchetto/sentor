@@ -1,13 +1,14 @@
-# ROS sensor monitoring node
+# ROS messages monitoring node
 
-Continuously monitor that sensor messages are published on certain topics. If not published, sends warnings. But in general works with any topic, not only for sensor messages.
+Continuously monitor topic messages. Sends warnings when certain conditions on the messages are satisfied. 
 
-## launch
+## Launch
 
 Example launch command:
 
 `roslaunch sentor sentor_node.py config_file:=config/rob_lindsey.yaml`
 
+## Config
 
 The config file contains the list of topics to be monitored and the definition, for each, of when we want to be alerted.
 
