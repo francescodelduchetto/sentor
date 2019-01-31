@@ -104,5 +104,4 @@ if __name__ == "__main__":
     for topic_monitor in topic_monitors:
         topic_monitor.start()
 
-    while not rospy.is_shutdown():
-        time.sleep(1)
+    rospy.spin()
