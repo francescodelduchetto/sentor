@@ -172,24 +172,24 @@ class TopicMonitor(Thread):
                 time.sleep(0.3)
             time.sleep(1)
 
-    def lambda_satisfied_cb(self, msg):
+    def lambda_satisfied_cb(self, expr, msg):
         if not self._stop_event.isSet():
-            if not msg in self.sat_expressions_timer.keys():
-                # self.satisfied_expressions.append(msg)
+            if not expr in self.sat_expressions_timer.keys():
+                # self.satisfied_expressions.append(expr)
                 def cb(_):
-                    self.event_callback("Expression '%s' for %s seconds on topic %s satisfied" % (msg, self.timeout, self.topic_name), "warn")
+                    self.event_callback("Expression '%s' for %s seconds on topic %s satisfied" % (expr, self.timeout, self.topic_name), "warn", msg)
 
                 self._lock.acquire()
-                self.sat_expressions_timer.update({msg: rospy.Timer(rospy.Duration.from_sec(self.timeout), cb, oneshot=True)})
+                self.sat_expressions_timer.update(expr: {"timer": rospy.Timer(rospy.Duration.from_sec(self.timeout), cb, oneshot=True)})
                 self._lock.release()
             #print "sat", msg
 
-    def lambda_unsatisfied_cb(self, msg):
+    def lambda_unsatisfied_cb(self, expr):
         if not self._stop_event.isSet():
             if msg in self.sat_expressions_timer.keys():
                 self._lock.acquire()
-                self.sat_expressions_timer[msg].shutdown()
-                self.sat_expressions_timer.pop(msg)
+                self.sat_expressions_timer[expr].shutdown()
+                self.sat_expressions_timer.pop(expr)
                 self._lock.release()
             # if not msg in self.unsatisfied_expressions and msg in self.satisfied_expressions:
             #     self.unsatisfied_expressions.append(msg)

@@ -37,7 +37,7 @@ class ROSTopicFilter(object):
 
         if self.filter_satisfied:
             for func in self.sat_callbacks:
-                func(self.lambda_fn_str)
+                func(self.lambda_fn_str, msg)
         else:
             for func in self.unsat_callbacks:
                 func(self.lambda_fn_str)

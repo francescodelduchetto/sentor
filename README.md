@@ -1,17 +1,35 @@
-# ROS sensor monitoring node
+# ROS messages monitoring node
 
-Continuously monitor that sensor messages are published on certain topics. If not published, sends warnings. But in general works with any topic, not only for sensor messages.
+Continuously monitor topic messages. Sends warnings when certain conditions on the messages are satisfied. 
 
-## launch
+## Launch
 
-Example launch command to monitor the topics `/scan` and `/image_color`:
+Example launch command:
 
-`roslaunch sentor sentor_node.py topics:="/scan /image_color"`
-
-We can also monitor that monitor that the topic messages fulfill a certain expression (and get a warning when that happen):
-
-```
-roslaunch sentor sentor_node.py topics:="/scan /image_color /battery_state /battery_state.lifePercent<5,lifePercent==1"
+```sh
+roslaunch sentor sentor.launch config_file:=config/rob_lindsey.yaml
 ```
 
-with the above command we get a warning when the topics `/scan`, `/image_color` and `/battery_state` are not published and when the parameter `lifePercent` value of topic messages in `/battery_state` becomes less than 5 and when it becomes equal to 1. The comma separates different expressions on the same topic message. Valid operators are `==`, `<=`, `>=`, `!=`, `<`, `>`.
+## Config
+
+The config file contains the list of topics to be monitored and the definition, for each, of when we want to be alerted.
+
+```yaml
+- name : '/virtual_bumper_event'
+  signal_lambdas :
+    - 'lambda msg : msg.freeRunStarted == True'
+
+- name : '/diagnostics_toplevel_state'
+  signal_when : 'not published'
+  signal_lambdas :
+    - 'lambda msg : msg.level == 1'
+    - 'lambda msg : msg.level == 2'
+  timeout : 3
+
+- name : '/interface/buttonPressedWhileDisabled'
+  signal_when : 'published'
+```
+- `name`: is the name of the topic to monitor
+- `signal_when`: optional, can be either 'not published' or 'published'. Respectively, it will send a warning when the topic is not published or when it is.
+- `signal_lambdas`: optional, it's a list of (pythonic) lambda expressions such that when they are satisfied a warning is sent
+- `timeout`: optional (default=0.1), amount of time (in seconds) for which the signal has to be satisfied before sending the warning.
