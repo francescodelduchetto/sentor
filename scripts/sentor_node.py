@@ -48,9 +48,9 @@ def start_monitoring(_):
 
 def event_callback(string, type, msg=""):
     if type == "info":
-        rospy.loginfo(string + '\n' + msg)
+        rospy.loginfo(string + '\n' + str(msg))
     elif type == "warn":
-        rospy.logwarn(string + '\n' + msg)
+        rospy.logwarn(string + '\n' + str(msg))
 
     if event_pub is not None:
         event_pub.publish(String("%s: %s" % (type, string)))
