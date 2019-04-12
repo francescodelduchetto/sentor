@@ -2,6 +2,15 @@
 Changelog for package sentor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#3 <https://github.com/LCAS/sentor/issues/3>`_ from francescodelduchetto/master
+  fix some bugs
+* Merge branch 'master' into master
+* Merge branch 'master' of https://github.com/francescodelduchetto/sentor
+* fix various errors
+* Contributors: Lindsey User, Marc Hanheide
+
 2.0.2 (2019-04-12)
 ------------------
 * Merge pull request `#2 <https://github.com/LCAS/sentor/issues/2>`_ from francescodelduchetto/master
