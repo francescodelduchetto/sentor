@@ -180,13 +180,13 @@ class TopicMonitor(Thread):
                     self.event_callback("Expression '%s' for %s seconds on topic %s satisfied" % (expr, self.timeout, self.topic_name), "warn", msg)
 
                 self._lock.acquire()
-                self.sat_expressions_timer.update(expr: {"timer": rospy.Timer(rospy.Duration.from_sec(self.timeout), cb, oneshot=True)})
+                self.sat_expressions_timer.update({expr: rospy.Timer(rospy.Duration.from_sec(self.timeout), cb, oneshot=True)})
                 self._lock.release()
             #print "sat", msg
 
     def lambda_unsatisfied_cb(self, expr):
         if not self._stop_event.isSet():
-            if msg in self.sat_expressions_timer.keys():
+            if expr in self.sat_expressions_timer.keys():
                 self._lock.acquire()
                 self.sat_expressions_timer[expr].shutdown()
                 self.sat_expressions_timer.pop(expr)
