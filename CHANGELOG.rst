@@ -2,6 +2,21 @@
 Changelog for package sentor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.0.2 (2019-04-12)
+------------------
+* Merge pull request `#2 <https://github.com/LCAS/sentor/issues/2>`_ from francescodelduchetto/master
+  update readme with description of config file usage
+* rospy spin instead of 'handmade' spin
+* print also the message together with the expression
+* Merge branch 'master' into master
+* Merge pull request `#1 <https://github.com/LCAS/sentor/issues/1>`_ from francescodelduchetto/2.0
+  merge 2.0 to master
+* Update README.md
+* Update README.md
+* Update README.md
+* Update README.md
+* Contributors: Marc Hanheide, francescodelduchetto
+
 2.0.1 (2019-01-19)
 ------------------
 * Merge pull request `#1 <https://github.com/LCAS/sentor/issues/1>`_ from LCAS/2.0
