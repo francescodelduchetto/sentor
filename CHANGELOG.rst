@@ -2,8 +2,8 @@
 Changelog for package sentor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.0.2 (2019-04-12)
+------------------
 * Merge pull request `#2 <https://github.com/LCAS/sentor/issues/2>`_ from francescodelduchetto/master
   update readme with description of config file usage
 * rospy spin instead of 'handmade' spin
