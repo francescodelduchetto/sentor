@@ -187,7 +187,7 @@ class TopicMonitor(Thread):
                 self.sat_expressions_timer.update({expr: rospy.Timer(rospy.Duration.from_sec(self.timeout), cb, oneshot=True)})
                 self._lock.release()
                 
-                if len(self.sat_expressions_timer.keys()) == len(self.signal_lambdas):
+                if len(self.sat_expressions_timer.keys()):
                     self.executor.execute()
             #print "sat", msg
 
