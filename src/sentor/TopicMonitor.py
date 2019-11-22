@@ -27,6 +27,7 @@ class TopicMonitor(Thread):
         self.topic_name = topic_name
         self.signal_when = signal_when
         self.signal_lambdas = signal_lambdas
+        self.actions = actions
         if timeout > 0:
             self.timeout = timeout
         else:
