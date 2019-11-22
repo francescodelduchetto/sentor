@@ -1,0 +1,11 @@
+- name: "/topological_navigation/feedback"
+#  signal_when : 'not published'
+  signal_lambdas:
+  - "lambda msg: msg.feedback.route == 'WayPoint1'"
+  execute:
+  - call:
+      service_name: "/gazebo/set_model_state"
+      service_args:
+      -  "req.model_state.model_name = 'thorvald_ii'"
+      -  "req.model_state.pose.orientation.w = 1.0"
+  timeout: 0.0

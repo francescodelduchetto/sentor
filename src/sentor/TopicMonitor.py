@@ -1,6 +1,7 @@
 from sentor.ROSTopicHz import ROSTopicHz
 from sentor.ROSTopicFilter import ROSTopicFilter
 from sentor.ROSTopicPub import ROSTopicPub
+from sentor.Executor import Executor
 
 from threading import Thread, Event, Lock
 import rostopic
@@ -20,7 +21,7 @@ class bcolors:
 class TopicMonitor(Thread):
 
 
-    def __init__(self, topic_name, signal_when, signal_lambdas, timeout, event_callback):
+    def __init__(self, topic_name, signal_when, signal_lambdas, actions, timeout, event_callback):
         Thread.__init__(self)
 
         self.topic_name = topic_name
@@ -41,6 +42,8 @@ class TopicMonitor(Thread):
         self.unsatisfied_expressions = []
         self.is_instantiated = False
         self.is_instantiated = self._instantiate_monitors()
+
+        self.executor = Executor(self.actions)
 
         self._stop_event = Event()
         self._killed_event = Event()
@@ -126,6 +129,7 @@ class TopicMonitor(Thread):
 
         def cb(_):
             self.event_callback("Topic %s is not published anymore" % self.topic_name, "warn")
+            self.executor.execute()
 
         timer = None
         while not self._killed_event.isSet():
@@ -178,10 +182,13 @@ class TopicMonitor(Thread):
                 # self.satisfied_expressions.append(expr)
                 def cb(_):
                     self.event_callback("Expression '%s' for %s seconds on topic %s satisfied" % (expr, self.timeout, self.topic_name), "warn", msg)
-
+                
                 self._lock.acquire()
                 self.sat_expressions_timer.update({expr: rospy.Timer(rospy.Duration.from_sec(self.timeout), cb, oneshot=True)})
                 self._lock.release()
+                
+                if len(self.sat_expressions_timer.keys()):
+                    self.executor.execute()
             #print "sat", msg
 
     def lambda_unsatisfied_cb(self, expr):
@@ -198,6 +205,7 @@ class TopicMonitor(Thread):
     def published_cb(self, msg):
         if not self._stop_event.isSet():
             self.event_callback("Topic %s is published " % (self.topic_name), "warn")
+            self.executor.execute()
             # self._lock.acquire()
             # if not msg in self.satisfied_expressions:
             #     self.satisfied_expressions.append(msg)
