@@ -8,4 +8,5 @@
       service_args:
       -  "req.model_state.model_name = 'thorvald_ii'"
       -  "req.model_state.pose.orientation.w = 1.0"
+  exec_once: True
   timeout: 0.0

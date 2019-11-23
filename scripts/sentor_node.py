@@ -87,6 +87,7 @@ if __name__ == "__main__":
         signal_when = ''
         signal_lambdas = []
         actions = []
+        exec_once = False
         timeout = 0
         if 'signal_when' in topic.keys():
             signal_when = topic['signal_when']
@@ -94,10 +95,12 @@ if __name__ == "__main__":
             signal_lambdas = topic['signal_lambdas']
         if 'execute' in topic.keys():
             actions = topic['execute']
+        if 'exec_once' in topic.keys():
+            exec_once = topic['exec_once']
         if 'timeout' in topic.keys():
             timeout = topic['timeout']
 
-        topic_monitor = TopicMonitor(topic_name, signal_when, signal_lambdas, actions, timeout, event_callback)
+        topic_monitor = TopicMonitor(topic_name, signal_when, signal_lambdas, actions, exec_once, timeout, event_callback)
 
         topic_monitors.append(topic_monitor)
 
