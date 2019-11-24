@@ -13,13 +13,17 @@ class Executor(object):
     
     def __init__(self, config):
         
-        self.config = config
         self.actions = []
-        
         for action in config:
             
             if action.keys()[0] == "call":
                 self.init_call(action)
+                
+            elif action.keys()[0] == "sleep":
+                self.init_sleep(action)
+                
+            else:
+                rospy.logerr("action type '{}' not supported".format(action.keys()[0]))
                     
                     
     def init_call(self, action):
@@ -44,8 +48,18 @@ class Executor(object):
             
         except rospy.ROSException as e:
             rospy.logerr(e)
-                    
+            
+            
+    def init_sleep(self, action):
         
+        d = {}
+        d["func"] = "self.sleep(**kwargs)"
+        d["kwargs"] = {}
+        d["kwargs"]["duration"] = action["sleep"]
+
+        self.actions.append(d)        
+        
+                    
     def execute(self):
         
         for action in self.actions:
@@ -54,6 +68,11 @@ class Executor(object):
                
 
     def call(self, service_client, req):
-       resp = service_client(req)
-       rospy.loginfo(resp)
+        resp = service_client(req)
+        rospy.loginfo(resp)
+       
+       
+    def sleep(self, duration):
+        rospy.loginfo("sentor node sleeping for {} seconds".format(duration))
+        rospy.sleep(duration)
 #####################################################################################
