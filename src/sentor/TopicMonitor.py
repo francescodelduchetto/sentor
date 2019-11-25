@@ -21,14 +21,12 @@ class bcolors:
 class TopicMonitor(Thread):
 
 
-    def __init__(self, topic_name, signal_when, signal_lambdas, actions, exec_once, timeout, event_callback):
+    def __init__(self, topic_name, signal_when, signal_lambdas, actions, exec_once, lock_exec, timeout, event_callback):
         Thread.__init__(self)
 
         self.topic_name = topic_name
         self.signal_when = signal_when
         self.signal_lambdas = signal_lambdas
-        self.actions = actions
-        self.exec_once = exec_once
         if timeout > 0:
             self.timeout = timeout
         else:
@@ -45,8 +43,7 @@ class TopicMonitor(Thread):
         self.is_instantiated = False
         self.is_instantiated = self._instantiate_monitors()
 
-        self.executor = Executor(self.actions)
-        self.executed = False
+        self.executor = Executor(actions, exec_once, lock_exec, bcolors)
 
         self._stop_event = Event()
         self._killed_event = Event()
@@ -132,7 +129,7 @@ class TopicMonitor(Thread):
 
         def cb(_):
             self.event_callback("Topic %s is not published anymore" % self.topic_name, "warn")
-            self.execute()
+            self.executor.execute()
 
         timer = None
         while not self._killed_event.isSet():
@@ -191,7 +188,7 @@ class TopicMonitor(Thread):
                 self._lock.release()
                 
                 if len(self.sat_expressions_timer.keys()) == len(self.signal_lambdas):
-                    self.execute()
+                    self.executor.execute()
             #print "sat", msg
 
     def lambda_unsatisfied_cb(self, expr):
@@ -208,7 +205,7 @@ class TopicMonitor(Thread):
     def published_cb(self, msg):
         if not self._stop_event.isSet():
             self.event_callback("Topic %s is published " % (self.topic_name), "warn")
-            self.execute()
+            self.executor.execute()
             # self._lock.acquire()
             # if not msg in self.satisfied_expressions:
             #     self.satisfied_expressions.append(msg)
@@ -216,12 +213,6 @@ class TopicMonitor(Thread):
             #     if msg in self.published_filters_list:
             #         self.published_filters_list.remove(msg)
             # self._lock.release()
-                    
-    def execute(self):
-        if not self.executed:
-            self.executor.execute()
-            if self.exec_once:
-                self.executed = True
         
     def stop_monitor(self):
         self._stop_event.set()

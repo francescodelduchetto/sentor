@@ -3,11 +3,19 @@
   signal_lambdas:
   - "lambda msg: msg.feedback.route == 'WayPoint1'"
   execute:
-  - sleep: 5.0
   - call:
       service_name: "/gazebo/set_model_state"
       service_args:
       -  "req.model_state.model_name = 'thorvald_ii'"
       -  "req.model_state.pose.orientation.w = 1.0"
+  - sleep:
+      duration: 3.0
+  - publish:
+      topic_name: "/initialpose"
+      topic_latched: False
+      topic_data:
+      -  "msg.header.frame_id = '/map'"
+      -  "msg.pose.pose.orientation.w = 1.0"
   exec_once: False
+  lock_exec: False
   timeout: 0.0
