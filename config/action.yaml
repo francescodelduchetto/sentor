@@ -1,0 +1,14 @@
+- name: "/topological_navigation/feedback"
+#  signal_when : 'not published'
+  signal_lambdas:
+  - "lambda msg: msg.feedback.route == 'WayPoint1'"
+  execute:
+  - action:
+      namespace: "/topological_navigation"
+      package: "topological_navigation"
+      action_prefix: "GotoNode"
+      goal_args:
+      -  "goal.target = 'WayPoint58'"
+  exec_once: False
+  lock_exec: False
+  timeout: 0.0

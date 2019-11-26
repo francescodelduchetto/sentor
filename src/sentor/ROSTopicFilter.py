@@ -1,5 +1,5 @@
-import rospy
-
+import rospy, math
+# imported the package `math` so that it can be used in the lambda functions
 
 class ROSTopicFilter(object):
 

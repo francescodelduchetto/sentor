@@ -5,7 +5,7 @@ Created on Thu Nov 21 10:30:22 2019
 @author: Adam Binch (abinch@sagarobotics.com)
 """
 #####################################################################################
-import rosservice, rostopic, rospy
+import rosservice, rostopic, rospy, actionlib
 from threading import Lock
 
 
@@ -28,6 +28,9 @@ class Executor(object):
                 
             elif action.keys()[0] == "publish":
                 self.init_publish(action)
+                
+            elif action.keys()[0] == "action":
+                self.init_action(action)
                 
             elif action.keys()[0] == "sleep":
                 self.init_sleep(action)
@@ -88,6 +91,37 @@ class Executor(object):
         except rospy.ROSException as e:
             rospy.logerr(e)
             
+            
+    def init_action(self, action):
+        
+        namespace = action["action"]["namespace"]
+        package = action["action"]["package"]
+        action_prefix = action["action"]["action_prefix"]
+        
+        exec("from {}.msg import {} as action_spec".format(package, action_prefix + "Action"))
+        exec("from {}.msg import {} as goal_class".format(package, action_prefix + "Goal"))
+        
+        action_client = actionlib.SimpleActionClient(namespace, action_spec)
+        rospy.loginfo("Waiting for action server for action of type {} ...".format(action_prefix + "Action"))
+        wait = action_client.wait_for_server(rospy.Duration(5.0))
+        if not wait:
+            rospy.logerr("Action server not available.")
+            return
+        rospy.loginfo("Connected to action server.")
+
+        goal = goal_class()
+        for arg in action["action"]["goal_args"]: exec(arg)
+            
+        d = {}
+        d["func"] = "self.action(**kwargs)"
+        d["kwargs"] = {}
+        d["kwargs"]["action_type"] = action.keys()[0]
+        d["kwargs"]["action_prefix"] = action["action"]["action_prefix"]
+        d["kwargs"]["action_client"] = action_client
+        d["kwargs"]["goal"] = goal
+        
+        self.actions.append(d)
+            
         
     def init_sleep(self, action):
         
@@ -129,7 +163,13 @@ class Executor(object):
         
         self.log_info("publishing to topic '{}'".format(topic_name), action_type)
         pub.publish(msg)
-       
+        
+        
+    def action(self, action_type, action_prefix, action_client, goal):
+        
+        self.log_info("executing action of type '{}'".format(action_prefix + "Action"), action_type)
+        action_client.send_goal(goal)
+        
        
     def sleep(self, action_type, duration):
         

@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <launch>
 <arg name="topics" default=""/>
-<arg name="config_file" default="$(find sentor)/config/call.yaml"/>
+<arg name="config_file" default="$(find sentor)/config/action.yaml"/>
 
 <node
 	name="sentor"
