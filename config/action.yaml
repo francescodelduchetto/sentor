@@ -7,8 +7,10 @@
       user_msg: "Navigating to charging node."
       namespace: "/topological_navigation"
       package: "topological_navigation"
-      action_prefix: "GotoNode"
+      action_spec: "GotoNodeAction"
       goal_args:
       -  "goal.target = 'WayPoint58'"
   lock_exec: False             # lock out other threads while this one is executing its sequence of actions
   timeout: 0.0                 
+
+

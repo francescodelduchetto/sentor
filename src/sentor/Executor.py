@@ -5,8 +5,9 @@ Created on Thu Nov 21 10:30:22 2019
 @author: Adam Binch (abinch@sagarobotics.com)
 """
 #####################################################################################
-import rosservice, rostopic, rospy, actionlib, sys
+import rosservice, rostopic, rospy, actionlib
 from threading import Lock
+from copy import copy
 
 
 class Executor(object):
@@ -22,6 +23,8 @@ class Executor(object):
         self.actions = []
         
         for action in config:
+            
+            self.event_cb("initialising action of type '{}'".format(action.keys()[0]), "info")
             
             if action.keys()[0] == "call":
                 self.init_call(action)
@@ -53,16 +56,12 @@ class Executor(object):
 
             d = {}
             d["action"] = action.keys()[0]
-            d["string"] = "calling service '{}'.".format(service_name)
+            d["message"] = "calling service '{}'.".format(service_name)
+            d["user_msg"] = self.get_user_msg(action["call"])
             d["func"] = "self.call(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["service_client"] = service_client
             d["kwargs"]["req"] = req
-            
-            if "user_msg" in action["call"].keys():
-                d["user_msg"] = action["call"]["user_msg"]
-            else:
-                d["user_msg"] = ""
             
             self.actions.append(d)
             
@@ -85,16 +84,12 @@ class Executor(object):
                 
             d = {}
             d["action"] = action.keys()[0]
-            d["string"] = "publishing to topic '{}'.".format(topic_name)
+            d["message"] = "publishing to topic '{}'.".format(topic_name)
+            d["user_msg"] = self.get_user_msg(action["publish"])
             d["func"] = "self.publish(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["pub"] = pub
             d["kwargs"]["msg"] = msg
-            
-            if "user_msg" in action["publish"].keys():
-                d["user_msg"] = action["publish"]["user_msg"]
-            else:
-                d["user_msg"] = ""
             
             self.actions.append(d)
             
@@ -107,15 +102,15 @@ class Executor(object):
         try:
             namespace = action["action"]["namespace"]
             package = action["action"]["package"]
-            action_prefix = action["action"]["action_prefix"]
+            spec = action["action"]["action_spec"]
             
-            exec("from {}.msg import {} as action_spec".format(package, action_prefix + "Action"))
-            exec("from {}.msg import {} as goal_class".format(package, action_prefix + "Goal"))
+            exec("from {}.msg import {} as action_spec".format(package, spec))
+            exec("from {}.msg import {} as goal_class".format(package, spec[:-6] + "Goal"))
             
             action_client = actionlib.SimpleActionClient(namespace, action_spec)
             wait = action_client.wait_for_server(rospy.Duration(5.0))
             if not wait:
-                rospy.logerr("Action server with namespace '{}' and action spec '{}' not available.".format(namespace, action_prefix + "Action"))
+                self.event_cb("Action server with namespace '{}' and action spec '{}' not available.".format(namespace, spec), "error")
                 return
     
             goal = goal_class()
@@ -123,16 +118,12 @@ class Executor(object):
                 
             d = {}
             d["action"] = action.keys()[0]
-            d["string"] = "executing action of type '{}'.".format(action_prefix + "Action")
+            d["message"] = "executing action of type '{}'.".format(spec)
+            d["user_msg"] = self.get_user_msg(action["action"])
             d["func"] = "self.action(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["action_client"] = action_client
             d["kwargs"]["goal"] = goal
-            
-            if "user_msg" in action["action"].keys():
-                d["user_msg"] = action["action"]["user_msg"]
-            else:
-                d["user_msg"] = ""
             
             self.actions.append(d)
         
@@ -145,22 +136,28 @@ class Executor(object):
         try:
             d = {}
             d["action"] = action.keys()[0]
-            d["string"] = "sentor sleeping for {} seconds.".format(action["sleep"]["duration"])
+            d["message"] = "sentor sleeping for {} seconds.".format(action["sleep"]["duration"])
+            d["user_msg"] = self.get_user_msg(action["sleep"])
             d["func"] = "self.sleep(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["duration"] = action["sleep"]["duration"]
             
-            if "user_msg" in action["sleep"].keys():
-                d["user_msg"] = action["sleep"]["user_msg"]
-            else:
-                d["user_msg"] = ""
-    
             self.actions.append(d)
 
         except Exception as e:
             self.event_cb(str(e), "error")
+            
+            
+    def get_user_msg(self, action):
         
-                    
+        if "user_msg" in action.keys():
+            user_msg = action["user_msg"]
+        else:
+            user_msg = ""
+        
+        return user_msg
+        
+        
     def execute(self):
         
         if self.lock_exec:
@@ -168,7 +165,7 @@ class Executor(object):
         
         for action in self.actions:
             try:
-                self.event_cb("Executing '{}': ".format(action["action"]) + action["string"], "info", action["user_msg"])
+                self.event_cb("Executing '{}': ".format(action["action"]) + action["message"], "info", msg="")
                 kwargs = action["kwargs"]            
                 eval(action["func"])
                 
@@ -181,7 +178,7 @@ class Executor(object):
 
     def call(self, service_client, req):
         resp = service_client(req)
-        self.event_cb(str(resp), "info")
+        self.event_cb("success: {}".format(resp.success), "info")
         
         
     def publish(self, pub, msg):
