@@ -16,6 +16,9 @@
       topic_data:
       -  "msg.header.frame_id = '/map'"
       -  "msg.pose.pose.orientation.w = 1.0"
-  exec_once: False
-  lock_exec: False
+  lock_exec: False             # lock out other threads while this one is executing its sequence of actions
   timeout: 0.0
+
+
+#- name: "- name: "/scan""
+#  signal_when : 'published'

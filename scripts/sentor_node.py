@@ -51,6 +51,8 @@ def event_callback(string, type, msg=""):
         rospy.loginfo(string + '\n' + str(msg))
     elif type == "warn":
         rospy.logwarn(string + '\n' + str(msg))
+    elif type == "error":
+        rospy.logerr(string + '\n' + str(msg))
 
     if event_pub is not None:
         event_pub.publish(String("%s: %s" % (type, string)))
@@ -87,7 +89,6 @@ if __name__ == "__main__":
         signal_when = ''
         signal_lambdas = []
         actions = []
-        exec_once = False
         lock_exec = False
         timeout = 0
         if 'signal_when' in topic.keys():
@@ -96,14 +97,13 @@ if __name__ == "__main__":
             signal_lambdas = topic['signal_lambdas']
         if 'execute' in topic.keys():
             actions = topic['execute']
-        if 'exec_once' in topic.keys():
-            exec_once = topic['exec_once']
         if 'lock_exec' in topic.keys():
             lock_exec = topic['lock_exec']
         if 'timeout' in topic.keys():
             timeout = topic['timeout']
 
-        topic_monitor = TopicMonitor(topic_name, signal_when, signal_lambdas, actions, exec_once, lock_exec, timeout, event_callback)
+        topic_monitor = TopicMonitor(topic_name, signal_when, signal_lambdas, 
+                                     actions, lock_exec, timeout, event_callback)
 
         topic_monitors.append(topic_monitor)
 

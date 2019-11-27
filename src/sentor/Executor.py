@@ -5,20 +5,20 @@ Created on Thu Nov 21 10:30:22 2019
 @author: Adam Binch (abinch@sagarobotics.com)
 """
 #####################################################################################
-import rosservice, rostopic, rospy, actionlib
+import rosservice, rostopic, rospy, actionlib, sys
 from threading import Lock
 
 
 class Executor(object):
     
     
-    def __init__(self, config, exec_once, lock_exec, bcolors):
+    def __init__(self, config, lock_exec, event_cb):
 
-        self.exec_once = exec_once
-        self.executed = False
+        self.config = config
         self.lock_exec = lock_exec
+        self.event_cb = event_cb
+        
         self._lock = Lock()
-        self.bcolors = bcolors
         self.actions = []
         
         for action in config:
@@ -36,7 +36,7 @@ class Executor(object):
                 self.init_sleep(action)
                 
             else:
-                rospy.logerr("action type '{}' not supported".format(action.keys()[0]))
+                self.event_cb("action type '{}' not supported".format(action.keys()[0]), "error")
                     
                     
     def init_call(self, action):
@@ -52,17 +52,22 @@ class Executor(object):
             for arg in action["call"]["service_args"]: exec(arg)
 
             d = {}
+            d["action"] = action.keys()[0]
+            d["string"] = "calling service '{}'".format(service_name)
             d["func"] = "self.call(**kwargs)"
             d["kwargs"] = {}
-            d["kwargs"]["action_type"] = action.keys()[0]
-            d["kwargs"]["service_name"] = service_name               
             d["kwargs"]["service_client"] = service_client
             d["kwargs"]["req"] = req
             
+            if "user_msg" in action["call"].keys():
+                d["user_msg"] = action["call"]["user_msg"]
+            else:
+                d["user_msg"] = ""
+            
             self.actions.append(d)
             
-        except rospy.ROSException as e:
-            rospy.logerr(e)
+        except Exception as e:
+            self.event_cb(str(e), "error")
             
             
     def init_publish(self, action):
@@ -79,107 +84,115 @@ class Executor(object):
             for arg in action["publish"]["topic_data"]: exec(arg)
                 
             d = {}
+            d["action"] = action.keys()[0]
+            d["string"] = "publishing to topic '{}'".format(topic_name)
             d["func"] = "self.publish(**kwargs)"
             d["kwargs"] = {}
-            d["kwargs"]["action_type"] = action.keys()[0]
-            d["kwargs"]["topic_name"] = topic_name
             d["kwargs"]["pub"] = pub
             d["kwargs"]["msg"] = msg
             
+            if "user_msg" in action["publish"].keys():
+                d["user_msg"] = action["publish"]["user_msg"]
+            else:
+                d["user_msg"] = ""
+            
             self.actions.append(d)
             
-        except rospy.ROSException as e:
-            rospy.logerr(e)
+        except Exception as e:
+            self.event_cb(str(e), "error")
             
             
     def init_action(self, action):
         
-        namespace = action["action"]["namespace"]
-        package = action["action"]["package"]
-        action_prefix = action["action"]["action_prefix"]
-        
-        exec("from {}.msg import {} as action_spec".format(package, action_prefix + "Action"))
-        exec("from {}.msg import {} as goal_class".format(package, action_prefix + "Goal"))
-        
-        action_client = actionlib.SimpleActionClient(namespace, action_spec)
-        rospy.loginfo("Waiting for action server for action of type {} ...".format(action_prefix + "Action"))
-        wait = action_client.wait_for_server(rospy.Duration(5.0))
-        if not wait:
-            rospy.logerr("Action server not available.")
-            return
-        rospy.loginfo("Connected to action server.")
-
-        goal = goal_class()
-        for arg in action["action"]["goal_args"]: exec(arg)
+        try:
+            namespace = action["action"]["namespace"]
+            package = action["action"]["package"]
+            action_prefix = action["action"]["action_prefix"]
             
-        d = {}
-        d["func"] = "self.action(**kwargs)"
-        d["kwargs"] = {}
-        d["kwargs"]["action_type"] = action.keys()[0]
-        d["kwargs"]["action_prefix"] = action["action"]["action_prefix"]
-        d["kwargs"]["action_client"] = action_client
-        d["kwargs"]["goal"] = goal
+            exec("from {}.msg import {} as action_spec".format(package, action_prefix + "Action"))
+            exec("from {}.msg import {} as goal_class".format(package, action_prefix + "Goal"))
+            
+            action_client = actionlib.SimpleActionClient(namespace, action_spec)
+            wait = action_client.wait_for_server(rospy.Duration(5.0))
+            if not wait:
+                rospy.logerr("Action server with namespace '{}' and action spec '{}' not available.".format(namespace, action_prefix + "Action"))
+                self.exception_cb()
+                return
+    
+            goal = goal_class()
+            for arg in action["action"]["goal_args"]: exec(arg)
+                
+            d = {}
+            d["action"] = action.keys()[0]
+            d["string"] = "executing action of type '{}'".format(action_prefix + "Action")
+            d["func"] = "self.action(**kwargs)"
+            d["kwargs"] = {}
+            d["kwargs"]["action_client"] = action_client
+            d["kwargs"]["goal"] = goal
+            
+            if "user_msg" in action["action"].keys():
+                d["user_msg"] = action["action"]["user_msg"]
+            else:
+                d["user_msg"] = ""
+            
+            self.actions.append(d)
         
-        self.actions.append(d)
+        except Exception as e:
+            self.event_cb(str(e), "error")
             
         
     def init_sleep(self, action):
         
-        d = {}
-        d["func"] = "self.sleep(**kwargs)"
-        d["kwargs"] = {}
-        d["kwargs"]["action_type"] = action.keys()[0]
-        d["kwargs"]["duration"] = action["sleep"]["duration"]
+        try:
+            d = {}
+            d["action"] = action.keys()[0]
+            d["string"] = "sentor sleeping for {} seconds".format(action["sleep"]["duration"])
+            d["func"] = "self.sleep(**kwargs)"
+            d["kwargs"] = {}
+            d["kwargs"]["duration"] = action["sleep"]["duration"]
+            
+            if "user_msg" in action["sleep"].keys():
+                d["user_msg"] = action["sleep"]["user_msg"]
+            else:
+                d["user_msg"] = ""
+    
+            self.actions.append(d)
 
-        self.actions.append(d)        
+        except Exception as e:
+            self.event_cb(str(e), "error")
         
                     
     def execute(self):
         
-        if not self.executed:        
+        if self.lock_exec:
+            self._lock.acquire()
         
-            if self.lock_exec:
-                self._lock.acquire()
-            
-            for action in self.actions:
+        for action in self.actions:
+            try:
+                self.event_cb("Executing '{}': ".format(action["action"]) + action["string"], "info", action["user_msg"])
                 kwargs = action["kwargs"]            
                 eval(action["func"])
                 
-            if self.lock_exec:
-                self._lock.release()
-                
-            if self.exec_once:
-                self.executed = True
-               
+            except Exception as e:
+                self.event_cb(str(e), "error")
+            
+        if self.lock_exec:
+            self._lock.release()
+            
 
-    def call(self, action_type, service_name, service_client, req):
-        
-        self.log_info("calling service '{}'".format(service_name), action_type)
+    def call(self, service_client, req):
         resp = service_client(req)
-        rospy.loginfo(resp)
+        self.event_cb(str(resp), "info")
         
         
-    def publish(self, action_type, topic_name, pub, msg):
-        
-        self.log_info("publishing to topic '{}'".format(topic_name), action_type)
+    def publish(self, pub, msg):
         pub.publish(msg)
         
         
-    def action(self, action_type, action_prefix, action_client, goal):
-        
-        self.log_info("executing action of type '{}'".format(action_prefix + "Action"), action_type)
+    def action(self, action_client, goal):
         action_client.send_goal(goal)
         
        
-    def sleep(self, action_type, duration):
-        
-        self.log_info("sentor sleeping for {} seconds".format(duration), action_type)
+    def sleep(self, duration):
         rospy.sleep(duration)
-        
-        
-    def log_info(self, str_, action_type):
-        
-        msg = "Executing {}{}{}: ".format(self.bcolors.OKGREEN, action_type, self.bcolors.ENDC)
-        msg = msg + str_
-        rospy.loginfo(msg)
 #####################################################################################
