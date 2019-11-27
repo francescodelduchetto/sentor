@@ -21,7 +21,8 @@ class bcolors:
 class TopicMonitor(Thread):
 
 
-    def __init__(self, topic_name, signal_when, signal_lambdas, actions, exec_once, lock_exec, timeout, event_callback):
+    def __init__(self, topic_name, signal_when, signal_lambdas, actions, lock_exec, 
+                 timeout, event_callback):
         Thread.__init__(self)
 
         self.topic_name = topic_name
@@ -43,7 +44,7 @@ class TopicMonitor(Thread):
         self.is_instantiated = False
         self.is_instantiated = self._instantiate_monitors()
 
-        self.executor = Executor(actions, exec_once, lock_exec, bcolors)
+        self.executor = Executor(actions, lock_exec, event_callback)
 
         self._stop_event = Event()
         self._killed_event = Event()
