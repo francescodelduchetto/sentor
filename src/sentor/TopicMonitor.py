@@ -28,6 +28,7 @@ class TopicMonitor(Thread):
         self.topic_name = topic_name
         self.signal_when = signal_when
         self.signal_lambdas = signal_lambdas
+        self.actions = actions
         if timeout > 0:
             self.timeout = timeout
         else:
@@ -130,7 +131,7 @@ class TopicMonitor(Thread):
 
         def cb(_):
             self.event_callback("Topic %s is not published anymore" % self.topic_name, "warn")
-            self.executor.execute()
+            self.execute()
 
         timer = None
         while not self._killed_event.isSet():
@@ -189,7 +190,7 @@ class TopicMonitor(Thread):
                 self._lock.release()
                 
                 if len(self.sat_expressions_timer.keys()) == len(self.signal_lambdas):
-                    self.executor.execute()
+                    self.execute()
             #print "sat", msg
 
     def lambda_unsatisfied_cb(self, expr):
@@ -206,7 +207,7 @@ class TopicMonitor(Thread):
     def published_cb(self, msg):
         if not self._stop_event.isSet():
             self.event_callback("Topic %s is published " % (self.topic_name), "warn")
-            self.executor.execute()
+            self.execute()
             # self._lock.acquire()
             # if not msg in self.satisfied_expressions:
             #     self.satisfied_expressions.append(msg)
@@ -214,7 +215,12 @@ class TopicMonitor(Thread):
             #     if msg in self.published_filters_list:
             #         self.published_filters_list.remove(msg)
             # self._lock.release()
-        
+            
+    def execute(self):
+        if self.actions:
+            rospy.sleep(0.1)
+            self.executor.execute()
+            
     def stop_monitor(self):
         self._stop_event.set()
 

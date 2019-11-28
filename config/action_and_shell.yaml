@@ -10,6 +10,10 @@
       action_spec: "GotoNodeAction"
       goal_args:
       -  "goal.target = 'WayPoint58'"
+  - shell:
+      commands:
+      - "cowsay"
+      - "moo"
   lock_exec: False             # lock out other threads while this one is executing its sequence of actions
   timeout: 0.0                 
 

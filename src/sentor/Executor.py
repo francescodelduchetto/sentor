@@ -5,9 +5,8 @@ Created on Thu Nov 21 10:30:22 2019
 @author: Adam Binch (abinch@sagarobotics.com)
 """
 #####################################################################################
-import rosservice, rostopic, rospy, actionlib
+import rosservice, rostopic, rospy, actionlib, subprocess
 from threading import Lock
-from copy import copy
 
 
 class Executor(object):
@@ -24,7 +23,9 @@ class Executor(object):
         
         for action in config:
             
-            self.event_cb("initialising action of type '{}'".format(action.keys()[0]), "info")
+            rospy.sleep(0.1) # needed when using slackeros            
+            
+            self.event_cb("initialising sentor action of type '{}'".format(action.keys()[0]), "info")
             
             if action.keys()[0] == "call":
                 self.init_call(action)
@@ -37,6 +38,9 @@ class Executor(object):
                 
             elif action.keys()[0] == "sleep":
                 self.init_sleep(action)
+                
+            elif action.keys()[0] == "shell":
+                self.init_shell(action)
                 
             else:
                 self.event_cb("action type '{}' not supported".format(action.keys()[0]), "error")
@@ -56,7 +60,7 @@ class Executor(object):
 
             d = {}
             d["action"] = action.keys()[0]
-            d["message"] = "calling service '{}'.".format(service_name)
+            d["message"] = "calling service '{}'. ".format(service_name)
             d["user_msg"] = self.get_user_msg(action["call"])
             d["func"] = "self.call(**kwargs)"
             d["kwargs"] = {}
@@ -84,7 +88,7 @@ class Executor(object):
                 
             d = {}
             d["action"] = action.keys()[0]
-            d["message"] = "publishing to topic '{}'.".format(topic_name)
+            d["message"] = "publishing to topic '{}'. ".format(topic_name)
             d["user_msg"] = self.get_user_msg(action["publish"])
             d["func"] = "self.publish(**kwargs)"
             d["kwargs"] = {}
@@ -118,7 +122,7 @@ class Executor(object):
                 
             d = {}
             d["action"] = action.keys()[0]
-            d["message"] = "executing action of type '{}'.".format(spec)
+            d["message"] = "executing action of type '{}'. ".format(spec)
             d["user_msg"] = self.get_user_msg(action["action"])
             d["func"] = "self.action(**kwargs)"
             d["kwargs"] = {}
@@ -136,11 +140,28 @@ class Executor(object):
         try:
             d = {}
             d["action"] = action.keys()[0]
-            d["message"] = "sentor sleeping for {} seconds.".format(action["sleep"]["duration"])
+            d["message"] = "sentor sleeping for {} seconds. ".format(action["sleep"]["duration"])
             d["user_msg"] = self.get_user_msg(action["sleep"])
             d["func"] = "self.sleep(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["duration"] = action["sleep"]["duration"]
+            
+            self.actions.append(d)
+
+        except Exception as e:
+            self.event_cb(str(e), "error")
+            
+            
+    def init_shell(self, action):
+        
+        try:
+            d = {}
+            d["action"] = action.keys()[0]
+            d["message"] = "executing shell commands {}. ".format(action["shell"]["commands"])
+            d["user_msg"] = self.get_user_msg(action["shell"])
+            d["func"] = "self.shell(**kwargs)"
+            d["kwargs"] = {}
+            d["kwargs"]["commands"] = action["shell"]["commands"]
             
             self.actions.append(d)
 
@@ -164,8 +185,9 @@ class Executor(object):
             self._lock.acquire()
         
         for action in self.actions:
+            rospy.sleep(0.1) # needed when using slackeros
             try:
-                self.event_cb("Executing '{}': ".format(action["action"]) + action["message"], "info", msg="")
+                self.event_cb("Executing '{}': {} {}".format(action["action"], action["message"], action["user_msg"]), "info")
                 kwargs = action["kwargs"]            
                 eval(action["func"])
                 
@@ -191,4 +213,15 @@ class Executor(object):
        
     def sleep(self, duration):
         rospy.sleep(duration)
+        
+        
+    def shell(self, commands):
+        
+        process = subprocess.Popen(commands,
+                     stdout=subprocess.PIPE, 
+                     stderr=subprocess.PIPE)
+                     
+        stdout, stderr = process.communicate()
+        print stdout
+        print stderr
 #####################################################################################
