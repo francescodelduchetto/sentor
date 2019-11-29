@@ -218,7 +218,7 @@ class TopicMonitor(Thread):
             
     def execute(self):
         if self.actions:
-            rospy.sleep(0.1)
+            rospy.sleep(0.1) # needed when using slackeros
             self.executor.execute()
             
     def stop_monitor(self):

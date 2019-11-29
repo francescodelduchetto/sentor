@@ -5,7 +5,7 @@ Created on Thu Nov 21 10:30:22 2019
 @author: Adam Binch (abinch@sagarobotics.com)
 """
 #####################################################################################
-import rosservice, rostopic, rospy, actionlib, subprocess
+import rospy, rosservice, rostopic, actionlib, subprocess
 from threading import Lock
 
 
@@ -23,9 +23,7 @@ class Executor(object):
         
         for action in config:
             
-            rospy.sleep(0.1) # needed when using slackeros            
-            
-            self.event_cb("initialising sentor action of type '{}'".format(action.keys()[0]), "info")
+            rospy.loginfo("initialising sentor action of type '{}'".format(action.keys()[0]))
             
             if action.keys()[0] == "call":
                 self.init_call(action)
@@ -43,7 +41,7 @@ class Executor(object):
                 self.init_shell(action)
                 
             else:
-                self.event_cb("action type '{}' not supported".format(action.keys()[0]), "error")
+                rospy.logerr("sentor action of type '{}' not supported".format(action.keys()[0]))
                     
                     
     def init_call(self, action):
@@ -59,7 +57,6 @@ class Executor(object):
             for arg in action["call"]["service_args"]: exec(arg)
 
             d = {}
-            d["action"] = action.keys()[0]
             d["message"] = "calling service '{}'. ".format(service_name)
             d["user_msg"] = self.get_user_msg(action["call"])
             d["func"] = "self.call(**kwargs)"
@@ -70,7 +67,7 @@ class Executor(object):
             self.actions.append(d)
             
         except Exception as e:
-            self.event_cb(str(e), "error")
+            rospy.logerr(e)
             
             
     def init_publish(self, action):
@@ -87,7 +84,6 @@ class Executor(object):
             for arg in action["publish"]["topic_data"]: exec(arg)
                 
             d = {}
-            d["action"] = action.keys()[0]
             d["message"] = "publishing to topic '{}'. ".format(topic_name)
             d["user_msg"] = self.get_user_msg(action["publish"])
             d["func"] = "self.publish(**kwargs)"
@@ -98,7 +94,7 @@ class Executor(object):
             self.actions.append(d)
             
         except Exception as e:
-            self.event_cb(str(e), "error")
+            rospy.logerr(e)
             
             
     def init_action(self, action):
@@ -114,15 +110,14 @@ class Executor(object):
             action_client = actionlib.SimpleActionClient(namespace, action_spec)
             wait = action_client.wait_for_server(rospy.Duration(5.0))
             if not wait:
-                self.event_cb("Action server with namespace '{}' and action spec '{}' not available.".format(namespace, spec), "error")
+                rospy.logerr("Action server with namespace '{}' and action spec '{}' not available.".format(namespace, spec))
                 return
     
             goal = goal_class()
             for arg in action["action"]["goal_args"]: exec(arg)
                 
             d = {}
-            d["action"] = action.keys()[0]
-            d["message"] = "executing action of type '{}'. ".format(spec)
+            d["message"] = "sending goal for action of type '{}'. ".format(spec)
             d["user_msg"] = self.get_user_msg(action["action"])
             d["func"] = "self.action(**kwargs)"
             d["kwargs"] = {}
@@ -132,14 +127,13 @@ class Executor(object):
             self.actions.append(d)
         
         except Exception as e:
-            self.event_cb(str(e), "error")
+            self.logerr(e)
             
         
     def init_sleep(self, action):
         
         try:
             d = {}
-            d["action"] = action.keys()[0]
             d["message"] = "sentor sleeping for {} seconds. ".format(action["sleep"]["duration"])
             d["user_msg"] = self.get_user_msg(action["sleep"])
             d["func"] = "self.sleep(**kwargs)"
@@ -149,14 +143,13 @@ class Executor(object):
             self.actions.append(d)
 
         except Exception as e:
-            self.event_cb(str(e), "error")
+            self.logerr(e)
             
             
     def init_shell(self, action):
         
         try:
             d = {}
-            d["action"] = action.keys()[0]
             d["message"] = "executing shell commands {}. ".format(action["shell"]["commands"])
             d["user_msg"] = self.get_user_msg(action["shell"])
             d["func"] = "self.shell(**kwargs)"
@@ -166,7 +159,7 @@ class Executor(object):
             self.actions.append(d)
 
         except Exception as e:
-            self.event_cb(str(e), "error")
+            self.logerr(e)
             
             
     def get_user_msg(self, action):
@@ -187,7 +180,7 @@ class Executor(object):
         for action in self.actions:
             rospy.sleep(0.1) # needed when using slackeros
             try:
-                self.event_cb("Executing '{}': {} {}".format(action["action"], action["message"], action["user_msg"]), "info")
+                self.event_cb(action["message"] + action["user_msg"], "info")
                 kwargs = action["kwargs"]            
                 eval(action["func"])
                 
@@ -199,8 +192,12 @@ class Executor(object):
             
 
     def call(self, service_client, req):
+        
         resp = service_client(req)
-        self.event_cb("success: {}".format(resp.success), "info")
+        if resp.success:
+            self.event_cb("service call success: {}".format(resp.success), "info")
+        else:
+            self.event_cb("service call success: {}".format(resp.success), "error")
         
         
     def publish(self, pub, msg):
@@ -208,7 +205,7 @@ class Executor(object):
         
         
     def action(self, action_client, goal):
-        action_client.send_goal(goal)
+        action_client.send_goal(goal, self.goal_cb)
         
        
     def sleep(self, duration):
@@ -224,4 +221,14 @@ class Executor(object):
         stdout, stderr = process.communicate()
         print stdout
         print stderr
+        
+        
+    def goal_cb(self, status, result):
+        
+        if status == 3:
+            self.event_cb("goal achieved", "info")
+        elif status == 2 or status == 6:
+            self.event_cb("goal preempted", "warn")
+        else:
+            self.event_cb("goal failed", "error")
 #####################################################################################

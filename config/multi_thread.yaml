@@ -1,0 +1,41 @@
+- name: "/topological_navigation/feedback"
+#  signal_when : 'not published'
+  signal_lambdas:
+  - "lambda msg: msg.feedback.route == 'WayPoint1'"
+  execute:
+  - action:
+      user_msg: "Navigating to charging node."
+      namespace: "/topological_navigation"
+      package: "topological_navigation"
+      action_spec: "GotoNodeAction"
+      goal_args:
+      -  "goal.target = 'WayPoint45'"
+  - shell:
+      commands:
+      - "cowsay"
+      - "moo"
+  lock_exec: False             # lock out other threads while this one is executing its sequence of actions
+  timeout: 0.0                 
+
+
+- name: "/topological_navigation/feedback"
+#  signal_when : 'not published'
+  signal_lambdas:
+  - "lambda msg: msg.feedback.route == 'WayPoint45'"
+  execute:
+  - call:
+      service_name: "/gazebo/set_model_state"
+      service_args:
+      -  "req.model_state.model_name = 'thorvald_ii'"
+      -  "req.model_state.pose.orientation.w = 1.0"
+  - sleep:
+      duration: 3.0
+  - publish:
+      topic_name: "/initialpose"
+      topic_latched: False
+      topic_data:
+      -  "msg.header.frame_id = '/map'"
+      -  "msg.pose.pose.orientation.w = 1.0"
+  lock_exec: False             # lock out other threads while this one is executing its sequence of actions
+  timeout: 0.0
+
