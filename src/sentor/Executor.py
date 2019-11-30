@@ -23,25 +23,26 @@ class Executor(object):
         
         for action in config:
             
-            rospy.loginfo("initialising sentor action of type '{}'".format(action.keys()[0]))
+            action_type = action.keys()[0]
+            rospy.loginfo("initialising sentor action type '{}'".format(action_type))
             
-            if action.keys()[0] == "call":
+            if action_type == "call":
                 self.init_call(action)
                 
-            elif action.keys()[0] == "publish":
+            elif action_type == "publish":
                 self.init_publish(action)
                 
-            elif action.keys()[0] == "action":
+            elif action_type == "action":
                 self.init_action(action)
                 
-            elif action.keys()[0] == "sleep":
+            elif action_type == "sleep":
                 self.init_sleep(action)
                 
-            elif action.keys()[0] == "shell":
+            elif action_type == "shell":
                 self.init_shell(action)
                 
             else:
-                rospy.logerr("sentor action of type '{}' not supported".format(action.keys()[0]))
+                rospy.logerr("sentor action type '{}' not supported".format(action_type))
                     
                     
     def init_call(self, action):
@@ -110,7 +111,7 @@ class Executor(object):
             action_client = actionlib.SimpleActionClient(namespace, action_spec)
             wait = action_client.wait_for_server(rospy.Duration(5.0))
             if not wait:
-                rospy.logerr("Action server with namespace '{}' and action spec '{}' not available.".format(namespace, spec))
+                rospy.logerr("action server with namespace '{}' and action spec '{}' not available.".format(namespace, spec))
                 return
     
             goal = goal_class()

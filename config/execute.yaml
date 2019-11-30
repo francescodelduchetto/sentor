@@ -39,3 +39,9 @@
   lock_exec: False             # lock out other threads while this one is executing its sequence of actions
   timeout: 0.0
 
+
+- name : '/row_detector/path_error'
+#  signal_when : 'not published'
+  signal_lambdas :
+    - "lambda msg : math.isnan(msg.y)"          # can now use the package `math` in the lambda functions
+  timeout : 0.0
