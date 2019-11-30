@@ -127,7 +127,7 @@ class Executor(object):
             self.actions.append(d)
         
         except Exception as e:
-            self.logerr(e)
+            rospy.logerr(e)
             
         
     def init_sleep(self, action):
@@ -143,7 +143,7 @@ class Executor(object):
             self.actions.append(d)
 
         except Exception as e:
-            self.logerr(e)
+            rospy.logerr(e)
             
             
     def init_shell(self, action):
@@ -159,7 +159,7 @@ class Executor(object):
             self.actions.append(d)
 
         except Exception as e:
-            self.logerr(e)
+            rospy.logerr(e)
             
             
     def get_user_msg(self, action):
