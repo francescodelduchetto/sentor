@@ -45,7 +45,8 @@ class TopicMonitor(Thread):
         self.is_instantiated = False
         self.is_instantiated = self._instantiate_monitors()
 
-        self.executor = Executor(actions, lock_exec, event_callback)
+        if actions:
+            self.executor = Executor(actions, lock_exec, event_callback)
 
         self._stop_event = Event()
         self._killed_event = Event()

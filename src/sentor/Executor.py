@@ -24,7 +24,7 @@ class Executor(object):
         for action in config:
             
             action_type = action.keys()[0]
-            rospy.loginfo("initialising sentor action type '{}'".format(action_type))
+            print "Initialising sentor action of type '{}'".format(action_type)
             
             if action_type == "call":
                 self.init_call(action)
@@ -42,7 +42,9 @@ class Executor(object):
                 self.init_shell(action)
                 
             else:
-                rospy.logerr("sentor action type '{}' not supported".format(action_type))
+                rospy.logerr("Sentor action of type '{}' not supported".format(action_type))
+                
+        print "\n"
                     
                     
     def init_call(self, action):
@@ -58,7 +60,7 @@ class Executor(object):
             for arg in action["call"]["service_args"]: exec(arg)
 
             d = {}
-            d["message"] = "calling service '{}'. ".format(service_name)
+            d["message"] = "Calling service '{}'. ".format(service_name)
             d["user_msg"] = self.get_user_msg(action["call"])
             d["func"] = "self.call(**kwargs)"
             d["kwargs"] = {}
@@ -82,10 +84,10 @@ class Executor(object):
                                   queue_size=10)
             
             msg = msg_class()
-            for arg in action["publish"]["topic_data"]: exec(arg)
+            for arg in action["publish"]["topic_args"]: exec(arg)
                 
             d = {}
-            d["message"] = "publishing to topic '{}'. ".format(topic_name)
+            d["message"] = "Publishing to topic '{}'. ".format(topic_name)
             d["user_msg"] = self.get_user_msg(action["publish"])
             d["func"] = "self.publish(**kwargs)"
             d["kwargs"] = {}
@@ -111,14 +113,14 @@ class Executor(object):
             action_client = actionlib.SimpleActionClient(namespace, action_spec)
             wait = action_client.wait_for_server(rospy.Duration(5.0))
             if not wait:
-                rospy.logerr("action server with namespace '{}' and action spec '{}' not available.".format(namespace, spec))
+                rospy.logerr("Action server with namespace '{}' and action spec '{}' not available.".format(namespace, spec))
                 return
     
             goal = goal_class()
             for arg in action["action"]["goal_args"]: exec(arg)
                 
             d = {}
-            d["message"] = "sending goal for action of type '{}'. ".format(spec)
+            d["message"] = "Sending goal for action with spec '{}'. ".format(spec)
             d["user_msg"] = self.get_user_msg(action["action"])
             d["func"] = "self.action(**kwargs)"
             d["kwargs"] = {}
@@ -135,7 +137,7 @@ class Executor(object):
         
         try:
             d = {}
-            d["message"] = "sentor sleeping for {} seconds. ".format(action["sleep"]["duration"])
+            d["message"] = "Sentor sleeping for {} seconds. ".format(action["sleep"]["duration"])
             d["user_msg"] = self.get_user_msg(action["sleep"])
             d["func"] = "self.sleep(**kwargs)"
             d["kwargs"] = {}
@@ -151,11 +153,11 @@ class Executor(object):
         
         try:
             d = {}
-            d["message"] = "executing shell commands {}. ".format(action["shell"]["commands"])
+            d["message"] = "Executing shell commands {}. ".format(action["shell"]["cmd_args"])
             d["user_msg"] = self.get_user_msg(action["shell"])
             d["func"] = "self.shell(**kwargs)"
             d["kwargs"] = {}
-            d["kwargs"]["commands"] = action["shell"]["commands"]
+            d["kwargs"]["cmd_args"] = action["shell"]["cmd_args"]
             
             self.actions.append(d)
 
@@ -195,10 +197,11 @@ class Executor(object):
     def call(self, service_client, req):
         
         resp = service_client(req)
+        
         if resp.success:
-            self.event_cb("service call success: {}".format(resp.success), "info")
+            self.event_cb("Service call success: {}".format(resp.success), "info")
         else:
-            self.event_cb("service call success: {}".format(resp.success), "error")
+            self.event_cb("Service call success: {}".format(resp.success), "error")
         
         
     def publish(self, pub, msg):
@@ -213,9 +216,9 @@ class Executor(object):
         rospy.sleep(duration)
         
         
-    def shell(self, commands):
+    def shell(self, cmd_args):
         
-        process = subprocess.Popen(commands,
+        process = subprocess.Popen(cmd_args,
                      stdout=subprocess.PIPE, 
                      stderr=subprocess.PIPE)
                      
@@ -227,9 +230,9 @@ class Executor(object):
     def goal_cb(self, status, result):
         
         if status == 3:
-            self.event_cb("goal achieved", "info")
+            self.event_cb("Goal achieved", "info")
         elif status == 2 or status == 6:
-            self.event_cb("goal preempted", "warn")
+            self.event_cb("Goal preempted", "warn")
         else:
-            self.event_cb("goal failed", "error")
+            self.event_cb("Goal failed", "error")
 #####################################################################################
