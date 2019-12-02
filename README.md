@@ -112,8 +112,8 @@ Child arguments of `shell`:
 ## Using sentor with this example config
 You will need the RASberry repo (<a href="https://github.com/LCAS/RASberry">get it here</a>) and all its dependencies. Create a file `.rasberryrc` in your home directory and put the following inside it:
 
-`export ROBOT_NAME="thorvald_023"` 
-`export SCENARIO_NAME="sim_riseholme-uv_poly_act"` 
+`export ROBOT_NAME="thorvald_023"`<br /> 
+`export SCENARIO_NAME="sim_riseholme-uv_poly_act"`
 
 Then issue this command:
 ```sh
