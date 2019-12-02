@@ -10,7 +10,7 @@ Continuously monitor topic messages. Send warnings and execute actions when cert
 Example launch command:
 
 ```sh
-roslaunch sentor sentor.launch config_file:=config/execute.yaml
+roslaunch sentor sentor.launch config_file:=$(rospack find sentor)/config/execute.yaml
 ```
 
 ## Config
