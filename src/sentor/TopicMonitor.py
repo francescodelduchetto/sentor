@@ -21,14 +21,14 @@ class bcolors:
 class TopicMonitor(Thread):
 
 
-    def __init__(self, topic_name, signal_when, signal_lambdas, actions, lock_exec, 
+    def __init__(self, topic_name, signal_when, signal_lambdas, processes, lock_exec, 
                  timeout, event_callback):
         Thread.__init__(self)
 
         self.topic_name = topic_name
         self.signal_when = signal_when
         self.signal_lambdas = signal_lambdas
-        self.actions = actions
+        self.processes = processes
         if timeout > 0:
             self.timeout = timeout
         else:
@@ -45,8 +45,8 @@ class TopicMonitor(Thread):
         self.is_instantiated = False
         self.is_instantiated = self._instantiate_monitors()
 
-        if actions:
-            self.executor = Executor(actions, lock_exec, event_callback)
+        if processes:
+            self.executor = Executor(processes, lock_exec, event_callback)
 
         self._stop_event = Event()
         self._killed_event = Event()
@@ -218,7 +218,7 @@ class TopicMonitor(Thread):
             # self._lock.release()
             
     def execute(self):
-        if self.actions:
+        if self.processes:
             rospy.sleep(0.1) # needed when using slackeros
             self.executor.execute()
             

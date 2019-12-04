@@ -19,93 +19,93 @@ class Executor(object):
         self.event_cb = event_cb
         
         self._lock = Lock()
-        self.actions = []
+        self.processes = []
         
-        for action in config:
+        for process in config:
             
-            action_type = action.keys()[0]
-            print "Initialising sentor action of type '{}'".format(action_type)
+            process_type = process.keys()[0]
+            print "Initialising process of type '{}'".format(process_type)
             
-            if action_type == "call":
-                self.init_call(action)
+            if process_type == "call":
+                self.init_call(process)
                 
-            elif action_type == "publish":
-                self.init_publish(action)
+            elif process_type == "publish":
+                self.init_publish(process)
                 
-            elif action_type == "action":
-                self.init_action(action)
+            elif process_type == "action":
+                self.init_action(process)
                 
-            elif action_type == "sleep":
-                self.init_sleep(action)
+            elif process_type == "sleep":
+                self.init_sleep(process)
                 
-            elif action_type == "shell":
-                self.init_shell(action)
+            elif process_type == "shell":
+                self.init_shell(process)
                 
             else:
-                rospy.logerr("Sentor action of type '{}' not supported".format(action_type))
+                rospy.logerr("Process of type '{}' not supported".format(process_type))
                 
         print "\n"
                     
                     
-    def init_call(self, action):
+    def init_call(self, process):
         
         try:
-            service_name = action["call"]["service_name"]
+            service_name = process["call"]["service_name"]
             service_class = rosservice.get_service_class_by_name(service_name)
 
             rospy.wait_for_service(service_name, timeout=5.0)
             service_client = rospy.ServiceProxy(service_name, service_class)
             
             req = service_class._request_class()
-            for arg in action["call"]["service_args"]: exec(arg)
+            for arg in process["call"]["service_args"]: exec(arg)
 
             d = {}
             d["message"] = "Calling service '{}'. ".format(service_name)
-            d["user_msg"] = self.get_user_msg(action["call"])
+            d["user_msg"] = self.get_user_msg(process["call"])
             d["func"] = "self.call(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["service_client"] = service_client
             d["kwargs"]["req"] = req
             
-            self.actions.append(d)
+            self.processes.append(d)
             
         except Exception as e:
             rospy.logerr(e)
             
             
-    def init_publish(self, action):
+    def init_publish(self, process):
         
         try:
-            topic_name = action["publish"]["topic_name"]
-            topic_latched = action["publish"]["topic_latched"]
+            topic_name = process["publish"]["topic_name"]
+            topic_latched = process["publish"]["topic_latched"]
             
             msg_class, real_topic, _ = rostopic.get_topic_class(topic_name)
             pub = rospy.Publisher(real_topic, msg_class, latch=topic_latched, 
                                   queue_size=10)
             
             msg = msg_class()
-            for arg in action["publish"]["topic_args"]: exec(arg)
+            for arg in process["publish"]["topic_args"]: exec(arg)
                 
             d = {}
             d["message"] = "Publishing to topic '{}'. ".format(topic_name)
-            d["user_msg"] = self.get_user_msg(action["publish"])
+            d["user_msg"] = self.get_user_msg(process["publish"])
             d["func"] = "self.publish(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["pub"] = pub
             d["kwargs"]["msg"] = msg
             
-            self.actions.append(d)
+            self.processes.append(d)
             
         except Exception as e:
             rospy.logerr(e)
             
             
-    def init_action(self, action):
+    def init_action(self, process):
         
         try:
-            namespace = action["action"]["namespace"]
-            package = action["action"]["package"]
-            spec = action["action"]["action_spec"]
+            namespace = process["action"]["namespace"]
+            package = process["action"]["package"]
+            spec = process["action"]["action_spec"]
             
             exec("from {}.msg import {} as action_spec".format(package, spec))
             exec("from {}.msg import {} as goal_class".format(package, spec[:-6] + "Goal"))
@@ -117,58 +117,58 @@ class Executor(object):
                 return
     
             goal = goal_class()
-            for arg in action["action"]["goal_args"]: exec(arg)
+            for arg in process["action"]["goal_args"]: exec(arg)
                 
             d = {}
             d["message"] = "Sending goal for action with spec '{}'. ".format(spec)
-            d["user_msg"] = self.get_user_msg(action["action"])
+            d["user_msg"] = self.get_user_msg(process["action"])
             d["func"] = "self.action(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["action_client"] = action_client
             d["kwargs"]["goal"] = goal
             
-            self.actions.append(d)
+            self.processes.append(d)
         
         except Exception as e:
             rospy.logerr(e)
             
         
-    def init_sleep(self, action):
+    def init_sleep(self, process):
         
         try:
             d = {}
-            d["message"] = "Sentor sleeping for {} seconds. ".format(action["sleep"]["duration"])
-            d["user_msg"] = self.get_user_msg(action["sleep"])
+            d["message"] = "Sentor sleeping for {} seconds. ".format(process["sleep"]["duration"])
+            d["user_msg"] = self.get_user_msg(process["sleep"])
             d["func"] = "self.sleep(**kwargs)"
             d["kwargs"] = {}
-            d["kwargs"]["duration"] = action["sleep"]["duration"]
+            d["kwargs"]["duration"] = process["sleep"]["duration"]
             
-            self.actions.append(d)
+            self.processes.append(d)
 
         except Exception as e:
             rospy.logerr(e)
             
             
-    def init_shell(self, action):
+    def init_shell(self, process):
         
         try:
             d = {}
-            d["message"] = "Executing shell commands {}. ".format(action["shell"]["cmd_args"])
-            d["user_msg"] = self.get_user_msg(action["shell"])
+            d["message"] = "Executing shell commands {}. ".format(process["shell"]["cmd_args"])
+            d["user_msg"] = self.get_user_msg(process["shell"])
             d["func"] = "self.shell(**kwargs)"
             d["kwargs"] = {}
-            d["kwargs"]["cmd_args"] = action["shell"]["cmd_args"]
+            d["kwargs"]["cmd_args"] = process["shell"]["cmd_args"]
             
-            self.actions.append(d)
+            self.processes.append(d)
 
         except Exception as e:
             rospy.logerr(e)
             
             
-    def get_user_msg(self, action):
+    def get_user_msg(self, process):
         
-        if "user_msg" in action.keys():
-            user_msg = action["user_msg"]
+        if "user_msg" in process.keys():
+            user_msg = process["user_msg"]
         else:
             user_msg = ""
         
@@ -180,12 +180,12 @@ class Executor(object):
         if self.lock_exec:
             self._lock.acquire()
         
-        for action in self.actions:
+        for process in self.processes:
             rospy.sleep(0.1) # needed when using slackeros
             try:
-                self.event_cb(action["message"] + action["user_msg"], "info")
-                kwargs = action["kwargs"]            
-                eval(action["func"])
+                self.event_cb(process["message"] + process["user_msg"], "info")
+                kwargs = process["kwargs"]            
+                eval(process["func"])
                 
             except Exception as e:
                 self.event_cb(str(e), "error")
