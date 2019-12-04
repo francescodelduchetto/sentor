@@ -24,7 +24,7 @@ class Executor(object):
         for process in config:
             
             process_type = process.keys()[0]
-            print "Initialising process of type '{}'".format(process_type)
+            print "Initialising process of type {}".format("\033[1m"+process_type+"\033[0m")
             
             if process_type == "call":
                 self.init_call(process)
@@ -42,7 +42,7 @@ class Executor(object):
                 self.init_shell(process)
                 
             else:
-                rospy.logerr("Process of type '{}' not supported".format(process_type))
+                rospy.logerr("Process of type {} not supported".format("\033[1m"+process_type+"\033[0m"))
                 
         print "\n"
                     
@@ -60,8 +60,8 @@ class Executor(object):
             for arg in process["call"]["service_args"]: exec(arg)
 
             d = {}
-            d["message"] = "Calling service '{}'. ".format(service_name)
-            d["user_msg"] = self.get_user_msg(process["call"])
+            d["message"] = self.get_message(process["call"])
+            d["default_msg"] = " Calling service '{}'.".format(service_name)
             d["func"] = "self.call(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["service_client"] = service_client
@@ -87,8 +87,8 @@ class Executor(object):
             for arg in process["publish"]["topic_args"]: exec(arg)
                 
             d = {}
-            d["message"] = "Publishing to topic '{}'. ".format(topic_name)
-            d["user_msg"] = self.get_user_msg(process["publish"])
+            d["message"] = self.get_message(process["publish"])
+            d["default_msg"] = " Publishing to topic '{}'.".format(topic_name)
             d["func"] = "self.publish(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["pub"] = pub
@@ -120,8 +120,8 @@ class Executor(object):
             for arg in process["action"]["goal_args"]: exec(arg)
                 
             d = {}
-            d["message"] = "Sending goal for action with spec '{}'. ".format(spec)
-            d["user_msg"] = self.get_user_msg(process["action"])
+            d["message"] = self.get_message(process["action"])
+            d["default_msg"] = " Sending goal for action with spec '{}'.".format(spec)
             d["func"] = "self.action(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["action_client"] = action_client
@@ -137,8 +137,8 @@ class Executor(object):
         
         try:
             d = {}
-            d["message"] = "Sentor sleeping for {} seconds. ".format(process["sleep"]["duration"])
-            d["user_msg"] = self.get_user_msg(process["sleep"])
+            d["message"] = self.get_message(process["sleep"])
+            d["default_msg"] = " Sentor sleeping for {} seconds.".format(process["sleep"]["duration"])
             d["func"] = "self.sleep(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["duration"] = process["sleep"]["duration"]
@@ -153,8 +153,8 @@ class Executor(object):
         
         try:
             d = {}
-            d["message"] = "Executing shell commands {}. ".format(process["shell"]["cmd_args"])
-            d["user_msg"] = self.get_user_msg(process["shell"])
+            d["message"] = self.get_message(process["shell"])
+            d["default_msg"] = " Executing shell commands {}.".format(process["shell"]["cmd_args"])
             d["func"] = "self.shell(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["cmd_args"] = process["shell"]["cmd_args"]
@@ -165,14 +165,14 @@ class Executor(object):
             rospy.logerr(e)
             
             
-    def get_user_msg(self, process):
+    def get_message(self, process):
         
-        if "user_msg" in process.keys():
-            user_msg = process["user_msg"]
+        if "message" in process.keys():
+            message = process["message"]
         else:
-            user_msg = ""
+            message = ""
         
-        return user_msg
+        return message
         
         
     def execute(self):
@@ -183,7 +183,7 @@ class Executor(object):
         for process in self.processes:
             rospy.sleep(0.1) # needed when using slackeros
             try:
-                self.event_cb(process["message"] + process["user_msg"], "info")
+                self.event_cb(process["message"] + process["default_msg"], "info")
                 kwargs = process["kwargs"]            
                 eval(process["func"])
                 
