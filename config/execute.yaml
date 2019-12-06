@@ -42,7 +42,8 @@
 - name: "/topological_navigation/feedback"
 #  signal_when : 'not published'
   signal_lambdas:
-  - "lambda msg: msg.feedback.route == 'WayPoint1'"
+  - function: "lambda msg: msg.feedback.route == 'WayPoint1'"
+    safety_critical: False
   execute:
   - action:
       message: "Navigating to charging node."
@@ -63,7 +64,8 @@
 - name: "/topological_navigation/feedback"
 #  signal_when : 'not published'
   signal_lambdas:
-  - "lambda msg: msg.feedback.route == 'WayPoint45'"
+  - function: "lambda msg: msg.feedback.route == 'WayPoint45'"
+    safety_critical: False
   execute:
   - call:
       message: "Teleporting the robot."
@@ -88,5 +90,6 @@
 #- name : '/row_detector/path_error'
 #  signal_when : 'not published'
 #  signal_lambdas :
-#    - "lambda msg : math.isnan(msg.y)"
+#    - function: "lambda msg : math.isnan(msg.y)"
+#      safety_critical: False
 #  timeout : 0.0

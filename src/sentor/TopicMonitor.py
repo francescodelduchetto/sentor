@@ -22,7 +22,7 @@ class TopicMonitor(Thread):
 
 
     def __init__(self, topic_name, signal_when, signal_lambdas, processes, lock_exec, 
-                 timeout, event_callback):
+                 timeout, event_callback, safety_callback):
         Thread.__init__(self)
 
         self.topic_name = topic_name
@@ -34,6 +34,7 @@ class TopicMonitor(Thread):
         else:
             self.timeout = 0.1
         self.event_callback = event_callback
+        self.safety_callback = safety_callback
         self.satisfied_expressions = []
         self.sat_expressions_timer = {}
         self.pub_monitor = None
@@ -84,10 +85,18 @@ class TopicMonitor(Thread):
             print "Signaling expressions for "+ bcolors.OKBLUE + self.topic_name + bcolors.ENDC + " ("+ bcolors.BOLD+"timeout: %s seconds" %  self.timeout + bcolors.ENDC +"):"
 
             self.lambda_monitor_list = []
-            for lambda_fn_str in self.signal_lambdas:
+            for signal_lambda in self.signal_lambdas:
+                
+                lambda_fn_str = signal_lambda["function"]
+                
+                if "safety_critical" in signal_lambda.keys(): 
+                    safety_critical = signal_lambda["safety_critical"]
+                else:
+                    safety_critical = False
+                
                 if lambda_fn_str != "":
                     print "\t" + bcolors.OKGREEN + lambda_fn_str + bcolors.ENDC
-                    lambda_monitor = self._instantiate_lambda_monitor(real_topic, msg_class, lambda_fn_str)
+                    lambda_monitor = self._instantiate_lambda_monitor(real_topic, msg_class, lambda_fn_str, safety_critical)
 
                     # register cb that notifies when the lambda function is True
                     lambda_monitor.register_satisfied_cb(self.lambda_satisfied_cb)
@@ -114,8 +123,8 @@ class TopicMonitor(Thread):
 
         return pub
 
-    def _instantiate_lambda_monitor(self, real_topic, msg_class, lambda_fn_str):
-        filter = ROSTopicFilter(self.topic_name, lambda_fn_str)
+    def _instantiate_lambda_monitor(self, real_topic, msg_class, lambda_fn_str, safety_critical):
+        filter = ROSTopicFilter(self.topic_name, lambda_fn_str, safety_critical)
 
         rospy.Subscriber(real_topic, msg_class, filter.callback_filter)
 
@@ -179,8 +188,12 @@ class TopicMonitor(Thread):
                 time.sleep(0.3)
             time.sleep(1)
 
-    def lambda_satisfied_cb(self, expr, msg):
+    def lambda_satisfied_cb(self, expr, msg, safety_critical):
         if not self._stop_event.isSet():
+            
+            if safety_critical:
+                self.safety_callback(False)
+            
             if not expr in self.sat_expressions_timer.keys():
                 # self.satisfied_expressions.append(expr)
                 def cb(_):
@@ -194,8 +207,12 @@ class TopicMonitor(Thread):
                     self.execute()
             #print "sat", msg
 
-    def lambda_unsatisfied_cb(self, expr):
+    def lambda_unsatisfied_cb(self, expr, safety_critical):
         if not self._stop_event.isSet():
+            
+            if safety_critical:
+                self.safety_callback(True)
+                
             if expr in self.sat_expressions_timer.keys():
                 self._lock.acquire()
                 self.sat_expressions_timer[expr].shutdown()

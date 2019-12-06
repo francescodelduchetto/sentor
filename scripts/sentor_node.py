@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from sentor.TopicMonitor import TopicMonitor
-from std_msgs.msg import String
+from sentor.SafetyMonitor import SafetyMonitor
 from std_srvs.srv import Empty
 import pprint
 import signal
@@ -76,6 +76,9 @@ if __name__ == "__main__":
     start_srv = rospy.Service('/sentor/start_monitor', Empty, start_monitoring)
 
     event_pub = rospy.Publisher('/sentor/event', String, queue_size=10)
+    
+    safety_pub_rate = rospy.get_param("~safety_pub_rate", "")
+    safety_monitor = SafetyMonitor(safety_pub_rate)
 
     topic_monitors = []
     print "Monitoring topics:"
@@ -103,7 +106,8 @@ if __name__ == "__main__":
             timeout = topic['timeout']
 
         topic_monitor = TopicMonitor(topic_name, signal_when, signal_lambdas, 
-                                     processes, lock_exec, timeout, event_callback)
+                                     processes, lock_exec, timeout, event_callback, 
+                                     safety_monitor.safety_callback)
 
         topic_monitors.append(topic_monitor)
 

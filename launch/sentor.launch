@@ -1,14 +1,13 @@
 <?xml version="1.0" ?>
 <launch>
-<arg name="topics" default=""/>
-<arg name="config_file" default=""/>
 
-<node
-	name="sentor"
-	pkg="sentor"
-	type="sentor_node.py"
-	output="screen">
-	<!-- <param name="~topics" value="$(arg topics)" /> -->
-	<param name="~config_file" value="$(arg config_file)" />
-</node>
+  <arg name="topics" default=""/>
+  <arg name="config_file" default=""/>
+  <arg name="safety_pub_rate" default="1.0"/>
+
+  <node pkg="sentor" type="sentor_node.py" name="sentor" output="screen">
+    <param name="~config_file" value="$(arg config_file)" />
+    <param name="~safety_pub_rate" value="$(arg safety_pub_rate)" />
+  </node>	
+
 </launch>
