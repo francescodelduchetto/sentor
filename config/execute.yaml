@@ -41,8 +41,9 @@
   
 - name: "/topological_navigation/feedback"
 #  signal_when : 'not published'
+#  safety_critical: False
   signal_lambdas:
-  - function: "lambda msg: msg.feedback.route == 'WayPoint1'"
+  - expression: "lambda msg: msg.feedback.route == 'WayPoint1'"
     safety_critical: False
   execute:
   - action:
@@ -63,8 +64,9 @@
 
 - name: "/topological_navigation/feedback"
 #  signal_when : 'not published'
+#  safety_critical: False
   signal_lambdas:
-  - function: "lambda msg: msg.feedback.route == 'WayPoint45'"
+  - expression: "lambda msg: msg.feedback.route == 'WayPoint45'"
     safety_critical: False
   execute:
   - call:
@@ -87,9 +89,25 @@
   timeout: 0.0
 
 
-#- name : '/row_detector/path_error'
+- name : '/row_detector/path_error'
 #  signal_when : 'not published'
-#  signal_lambdas :
-#    - function: "lambda msg : math.isnan(msg.y)"
-#      safety_critical: False
-#  timeout : 0.0
+#  safety_critical: False
+  signal_lambdas :
+    - expression: "lambda msg : math.isnan(msg.y)"
+      safety_critical: True
+  timeout : 0.0
+
+
+- name : '/row_detector/path_error'
+#  signal_when : 'not published'
+#  safety_critical: False
+  signal_lambdas :
+    - expression: "lambda msg : not math.isnan(msg.y)"
+      safety_critical: False
+  execute:
+  - call:
+      message: "Safe to operate. Resetting safety tag."
+      service_name: "/sentor/reset_safety_tag"
+      service_args:
+      -  "req.data = True"
+  timeout : 0.0

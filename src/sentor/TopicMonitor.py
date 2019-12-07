@@ -21,12 +21,13 @@ class bcolors:
 class TopicMonitor(Thread):
 
 
-    def __init__(self, topic_name, signal_when, signal_lambdas, processes, lock_exec, 
-                 timeout, event_callback, safety_callback):
+    def __init__(self, topic_name, signal_when, safety_critical, signal_lambdas, 
+                 processes, lock_exec, timeout, event_callback, safety_callback):
         Thread.__init__(self)
 
         self.topic_name = topic_name
         self.signal_when = signal_when
+        self.safety_critical = safety_critical
         self.signal_lambdas = signal_lambdas
         self.processes = processes
         if timeout > 0:
@@ -87,16 +88,16 @@ class TopicMonitor(Thread):
             self.lambda_monitor_list = []
             for signal_lambda in self.signal_lambdas:
                 
-                lambda_fn_str = signal_lambda["function"]
+                lambda_fn_str = signal_lambda["expression"]
                 
                 if "safety_critical" in signal_lambda.keys(): 
-                    safety_critical = signal_lambda["safety_critical"]
+                    safety_critical_lambda = signal_lambda["safety_critical"]
                 else:
-                    safety_critical = False
+                    safety_critical_lambda = False
                 
                 if lambda_fn_str != "":
                     print "\t" + bcolors.OKGREEN + lambda_fn_str + bcolors.ENDC
-                    lambda_monitor = self._instantiate_lambda_monitor(real_topic, msg_class, lambda_fn_str, safety_critical)
+                    lambda_monitor = self._instantiate_lambda_monitor(real_topic, msg_class, lambda_fn_str, safety_critical_lambda)
 
                     # register cb that notifies when the lambda function is True
                     lambda_monitor.register_satisfied_cb(self.lambda_satisfied_cb)
@@ -123,8 +124,8 @@ class TopicMonitor(Thread):
 
         return pub
 
-    def _instantiate_lambda_monitor(self, real_topic, msg_class, lambda_fn_str, safety_critical):
-        filter = ROSTopicFilter(self.topic_name, lambda_fn_str, safety_critical)
+    def _instantiate_lambda_monitor(self, real_topic, msg_class, lambda_fn_str, safety_critical_lambda):
+        filter = ROSTopicFilter(self.topic_name, lambda_fn_str, safety_critical_lambda)
 
         rospy.Subscriber(real_topic, msg_class, filter.callback_filter)
 
@@ -141,6 +142,8 @@ class TopicMonitor(Thread):
 
         def cb(_):
             self.event_callback("Topic %s is not published anymore" % self.topic_name, "warn")
+            if self.safety_critical:
+                self.safety_callback(False)
             self.execute()
 
         timer = None
@@ -188,10 +191,10 @@ class TopicMonitor(Thread):
                 time.sleep(0.3)
             time.sleep(1)
 
-    def lambda_satisfied_cb(self, expr, msg, safety_critical):
+    def lambda_satisfied_cb(self, expr, msg, safety_critical_lambda):
         if not self._stop_event.isSet():
             
-            if safety_critical:
+            if safety_critical_lambda:
                 self.safety_callback(False)
             
             if not expr in self.sat_expressions_timer.keys():
@@ -207,12 +210,8 @@ class TopicMonitor(Thread):
                     self.execute()
             #print "sat", msg
 
-    def lambda_unsatisfied_cb(self, expr, safety_critical):
+    def lambda_unsatisfied_cb(self, expr):
         if not self._stop_event.isSet():
-            
-            if safety_critical:
-                self.safety_callback(True)
-                
             if expr in self.sat_expressions_timer.keys():
                 self._lock.acquire()
                 self.sat_expressions_timer[expr].shutdown()
@@ -225,6 +224,8 @@ class TopicMonitor(Thread):
     def published_cb(self, msg):
         if not self._stop_event.isSet():
             self.event_callback("Topic %s is published " % (self.topic_name), "warn")
+            if self.safety_critical:
+                self.safety_callback(False)
             self.execute()
             # self._lock.acquire()
             # if not msg in self.satisfied_expressions:

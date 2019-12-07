@@ -21,10 +21,10 @@ class SafetyMonitor(object):
         self.safety_pub = rospy.Publisher('/safe_operation', Bool, queue_size=10)
         rospy.Timer(rospy.Duration(1.0/rate), self.safety_pub_cb)
         
-        rospy.Service('/sentor/reset', SetBool, self.reset_cb)
+        rospy.Service('/sentor/reset_safety_tag', SetBool, self.reset)
         
         
-    def reset_cb(self, req):
+    def reset(self, req):
         
         self.safe_operation = req.data        
         

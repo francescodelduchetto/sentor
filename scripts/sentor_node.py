@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from sentor.TopicMonitor import TopicMonitor
 from sentor.SafetyMonitor import SafetyMonitor
+from std_msgs.msg import String
 from std_srvs.srv import Empty
 import pprint
 import signal
@@ -90,12 +91,15 @@ if __name__ == "__main__":
             continue
 
         signal_when = ''
+        safety_critical = False
         signal_lambdas = []
         processes = []
         lock_exec = False
         timeout = 0
         if 'signal_when' in topic.keys():
             signal_when = topic['signal_when']
+        if 'safety_critical' in topic.keys():
+            safety_critical = topic['safety_critical']
         if 'signal_lambdas' in topic.keys():
             signal_lambdas = topic['signal_lambdas']
         if 'execute' in topic.keys():
@@ -105,9 +109,9 @@ if __name__ == "__main__":
         if 'timeout' in topic.keys():
             timeout = topic['timeout']
 
-        topic_monitor = TopicMonitor(topic_name, signal_when, signal_lambdas, 
-                                     processes, lock_exec, timeout, event_callback, 
-                                     safety_monitor.safety_callback)
+        topic_monitor = TopicMonitor(topic_name, signal_when, safety_critical, 
+                                     signal_lambdas, processes, lock_exec, timeout, 
+                                     event_callback, safety_monitor.safety_callback)
 
         topic_monitors.append(topic_monitor)
 
