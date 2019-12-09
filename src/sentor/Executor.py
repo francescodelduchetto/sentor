@@ -192,7 +192,7 @@ class Executor(object):
                 eval(process["func"])
                 
             except Exception as e:
-                self.event_cb(str(e), "error")
+                rospy.logerr(e)
             
         if self.lock_exec:
             self._lock.release()
