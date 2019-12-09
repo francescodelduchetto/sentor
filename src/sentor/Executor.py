@@ -63,7 +63,7 @@ class Executor(object):
             for arg in process["call"]["service_args"]: exec(arg)
 
             d = {}
-            d["log"] = ("Calling service '{}'".format(service_name), "info", req)
+            d["def_msg"] = ("Calling service '{}'".format(service_name), "info", req)
             d["func"] = "self.call(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["service_name"] = service_name
@@ -90,7 +90,7 @@ class Executor(object):
             for arg in process["publish"]["topic_args"]: exec(arg)
                 
             d = {}
-            d["log"] = ("Publishing to topic '{}'".format(topic_name), "info", msg)
+            d["def_msg"] = ("Publishing to topic '{}'".format(topic_name), "info", msg)
             d["func"] = "self.publish(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["pub"] = pub
@@ -122,7 +122,7 @@ class Executor(object):
             for arg in process["action"]["goal_args"]: exec(arg)
                 
             d = {}
-            d["log"] = ("Sending goal for action with spec '{}'".format(spec), "info", goal)
+            d["def_msg"] = ("Sending goal for action with spec '{}'".format(spec), "info", goal)
             d["func"] = "self.action(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["spec"] = spec
@@ -139,7 +139,7 @@ class Executor(object):
         
         try:
             d = {}
-            d["log"] = ("Sentor sleeping for {} seconds".format(process["sleep"]["duration"]), "info", "")
+            d["def_msg"] = ("Sentor sleeping for {} seconds".format(process["sleep"]["duration"]), "info", "")
             d["func"] = "self.sleep(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["duration"] = process["sleep"]["duration"]
@@ -154,7 +154,7 @@ class Executor(object):
         
         try:
             d = {}
-            d["log"] = ("Executing shell commands {}".format(process["shell"]["cmd_args"]), "info", "")
+            d["def_msg"] = ("Executing shell commands {}".format(process["shell"]["cmd_args"]), "info", "")
             d["func"] = "self.shell(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["cmd_args"] = process["shell"]["cmd_args"]
@@ -167,11 +167,17 @@ class Executor(object):
 
     def init_log(self, process):
         
-        try:
+        try:            
             d = {}
-            d["log"] = (process["log"]["message"], process["log"]["level"], "")
-            d["func"] = "self.log()"
+            d["func"] = "self.log(**kwargs)"
             d["kwargs"] = {}
+            d["kwargs"]["message"] = process["log"]["message"]
+            d["kwargs"]["level"] = process["log"]["level"]
+            
+            if "msg_args" in process["log"].keys():
+                d["kwargs"]["msg_args"] = process["log"]["msg_args"]
+            else:
+                d["kwargs"]["msg_args"] = None                
             
             self.processes.append(d)
 
@@ -179,7 +185,9 @@ class Executor(object):
             rospy.logerr(e)
             
         
-    def execute(self):
+    def execute(self, msg):
+        
+        self.msg = msg
         
         if self.lock_exec:
             self._lock.acquire()
@@ -187,7 +195,9 @@ class Executor(object):
         for process in self.processes:
             rospy.sleep(0.1) # needed when using slackeros
             try:
-                self.event_cb(process["log"][0], process["log"][1], process["log"][2])
+                if "def_msg" in process.keys():
+                    self.event_cb(process["def_msg"][0], process["def_msg"][1], process["def_msg"][2])
+                    
                 kwargs = process["kwargs"]            
                 eval(process["func"])
                 
@@ -233,9 +243,16 @@ class Executor(object):
         print stderr
         
     
-    def log(self):
-        pass
+    def log(self, message, level, msg_args):
         
+        msg = self.msg
+        if msg is not None and msg_args is not None:
+            args = [eval(arg) for arg in msg_args]
+            args = tuple(args)
+            self.event_cb(message.format(*args), level, "")
+        else:
+            self.event_cb(message, level, "")
+         
         
     def goal_cb(self, status, result):
         

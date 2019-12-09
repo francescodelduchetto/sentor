@@ -207,7 +207,7 @@ class TopicMonitor(Thread):
                 self._lock.release()
                 
                 if len(self.sat_expressions_timer.keys()) == len(self.signal_lambdas):
-                    self.execute()
+                    self.execute(msg)
             #print "sat", msg
 
     def lambda_unsatisfied_cb(self, expr):
@@ -226,7 +226,7 @@ class TopicMonitor(Thread):
             self.event_callback("Topic %s is published " % (self.topic_name), "warn")
             if self.safety_critical:
                 self.safety_callback(False)
-            self.execute()
+            self.execute(msg)
             # self._lock.acquire()
             # if not msg in self.satisfied_expressions:
             #     self.satisfied_expressions.append(msg)
@@ -235,10 +235,10 @@ class TopicMonitor(Thread):
             #         self.published_filters_list.remove(msg)
             # self._lock.release()
             
-    def execute(self):
+    def execute(self, msg=None):
         if self.processes:
             rospy.sleep(0.1) # needed when using slackeros
-            self.executor.execute()
+            self.executor.execute(msg)
             
     def stop_monitor(self):
         self._stop_event.set()

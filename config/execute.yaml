@@ -47,8 +47,10 @@
     safety_critical: False
   execute:
   - log:
-      message: "Navigating to charging node"
+      message: "Navigating to charging node from {}"
       level: info
+      msg_args:
+      - "msg.feedback.route"
   - action:
       namespace: "/topological_navigation"
       package: "topological_navigation"
