@@ -66,6 +66,7 @@ class Executor(object):
             d["log"] = ("Calling service '{}'".format(service_name), "info", req)
             d["func"] = "self.call(**kwargs)"
             d["kwargs"] = {}
+            d["kwargs"]["service_name"] = service_name
             d["kwargs"]["service_client"] = service_client
             d["kwargs"]["req"] = req
             
@@ -124,6 +125,7 @@ class Executor(object):
             d["log"] = ("Sending goal for action with spec '{}'".format(spec), "info", goal)
             d["func"] = "self.action(**kwargs)"
             d["kwargs"] = {}
+            d["kwargs"]["spec"] = spec
             d["kwargs"]["action_client"] = action_client
             d["kwargs"]["goal"] = goal
             
@@ -196,21 +198,23 @@ class Executor(object):
             self._lock.release()
             
 
-    def call(self, service_client, req):
+    def call(self, service_name, service_client, req):
         
         resp = service_client(req)
         
         if resp.success:
-            self.event_cb("Service call success: {}".format(resp.success), "info")
+            self.event_cb("Call to service '{}' succeeded".format(service_name), "info", req)
         else:
-            self.event_cb("Service call success: {}".format(resp.success), "warn")
+            self.event_cb("Call to service '{}' failed".format(service_name), "warn", req)
         
         
     def publish(self, pub, msg):
         pub.publish(msg)
         
         
-    def action(self, action_client, goal):
+    def action(self, spec, action_client, goal):
+        self.spec = spec
+        self.goal = goal
         action_client.send_goal(goal, self.goal_cb)
         
        
@@ -236,9 +240,9 @@ class Executor(object):
     def goal_cb(self, status, result):
         
         if status == 3:
-            self.event_cb("Goal achieved", "info")
+            self.event_cb("Goal achieved for action with spec '{}'".format(self.spec), "info", self.goal)
         elif status == 2 or status == 6:
-            self.event_cb("Goal preempted", "warn")
+            self.event_cb("Goal preempted for action with spec '{}'".format(self.spec), "warn", self.goal)
         else:
-            self.event_cb("Goal failed", "warn")
+            self.event_cb("Goal failed for action with spec '{}'".format(self.spec), "warn", self.goal)
 #####################################################################################
