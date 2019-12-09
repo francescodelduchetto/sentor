@@ -203,7 +203,7 @@ class Executor(object):
         if resp.success:
             self.event_cb("Service call success: {}".format(resp.success), "info")
         else:
-            self.event_cb("Service call success: {}".format(resp.success), "error")
+            self.event_cb("Service call success: {}".format(resp.success), "warn")
         
         
     def publish(self, pub, msg):
@@ -240,5 +240,5 @@ class Executor(object):
         elif status == 2 or status == 6:
             self.event_cb("Goal preempted", "warn")
         else:
-            self.event_cb("Goal failed", "error")
+            self.event_cb("Goal failed", "warn")
 #####################################################################################
