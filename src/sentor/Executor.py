@@ -41,6 +41,9 @@ class Executor(object):
             elif process_type == "shell":
                 self.init_shell(process)
                 
+            elif process_type == "log":
+                self.init_log(process)
+                
             else:
                 rospy.logerr("Process of type {} not supported".format("\033[1m"+process_type+"\033[0m"))
                 
@@ -60,8 +63,7 @@ class Executor(object):
             for arg in process["call"]["service_args"]: exec(arg)
 
             d = {}
-            d["message"] = self.get_message(process["call"])
-            d["default_msg"] = " Calling service '{}'.".format(service_name)
+            d["log"] = ("Calling service '{}'".format(service_name), "info", req)
             d["func"] = "self.call(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["service_client"] = service_client
@@ -87,8 +89,7 @@ class Executor(object):
             for arg in process["publish"]["topic_args"]: exec(arg)
                 
             d = {}
-            d["message"] = self.get_message(process["publish"])
-            d["default_msg"] = " Publishing to topic '{}'.".format(topic_name)
+            d["log"] = ("Publishing to topic '{}'".format(topic_name), "info", msg)
             d["func"] = "self.publish(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["pub"] = pub
@@ -120,8 +121,7 @@ class Executor(object):
             for arg in process["action"]["goal_args"]: exec(arg)
                 
             d = {}
-            d["message"] = self.get_message(process["action"])
-            d["default_msg"] = " Sending goal for action with spec '{}'.".format(spec)
+            d["log"] = ("Sending goal for action with spec '{}'".format(spec), "info", goal)
             d["func"] = "self.action(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["action_client"] = action_client
@@ -137,8 +137,7 @@ class Executor(object):
         
         try:
             d = {}
-            d["message"] = self.get_message(process["sleep"])
-            d["default_msg"] = " Sentor sleeping for {} seconds.".format(process["sleep"]["duration"])
+            d["log"] = ("Sentor sleeping for {} seconds".format(process["sleep"]["duration"]), "info", "")
             d["func"] = "self.sleep(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["duration"] = process["sleep"]["duration"]
@@ -153,8 +152,7 @@ class Executor(object):
         
         try:
             d = {}
-            d["message"] = self.get_message(process["shell"])
-            d["default_msg"] = " Executing shell commands {}.".format(process["shell"]["cmd_args"])
+            d["log"] = ("Executing shell commands {}".format(process["shell"]["cmd_args"]), "info", "")
             d["func"] = "self.shell(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["cmd_args"] = process["shell"]["cmd_args"]
@@ -163,17 +161,21 @@ class Executor(object):
 
         except Exception as e:
             rospy.logerr(e)
+
+
+    def init_log(self, process):
+        
+        try:
+            d = {}
+            d["log"] = (process["log"]["message"], process["log"]["level"], "")
+            d["func"] = "self.log()"
+            d["kwargs"] = {}
             
+            self.processes.append(d)
+
+        except Exception as e:
+            rospy.logerr(e)
             
-    def get_message(self, process):
-        
-        if "message" in process.keys():
-            message = process["message"]
-        else:
-            message = ""
-        
-        return message
-        
         
     def execute(self):
         
@@ -183,7 +185,7 @@ class Executor(object):
         for process in self.processes:
             rospy.sleep(0.1) # needed when using slackeros
             try:
-                self.event_cb(process["message"] + process["default_msg"], "info")
+                self.event_cb(process["log"][0], process["log"][1], process["log"][2])
                 kwargs = process["kwargs"]            
                 eval(process["func"])
                 
@@ -225,6 +227,10 @@ class Executor(object):
         stdout, stderr = process.communicate()
         print stdout
         print stderr
+        
+    
+    def log(self):
+        pass
         
         
     def goal_cb(self, status, result):

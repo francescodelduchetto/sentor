@@ -46,15 +46,16 @@
   - expression: "lambda msg: msg.feedback.route == 'WayPoint1'"
     safety_critical: False
   execute:
+  - log:
+      message: "Navigating to charging node"
+      level: info
   - action:
-      message: "Navigating to charging node."
       namespace: "/topological_navigation"
       package: "topological_navigation"
       action_spec: "GotoNodeAction"
       goal_args:
       -  "goal.target = 'WayPoint45'"
   - shell:
-      message: "Cow says 'moo'."
       cmd_args:
       - "cowsay"
       - "moo"
@@ -69,17 +70,20 @@
   - expression: "lambda msg: msg.feedback.route == 'WayPoint45'"
     safety_critical: False
   execute:
+  - log:
+      message: "Teleporting the robot"
+      level: info
   - call:
-      message: "Teleporting the robot."
       service_name: "/gazebo/set_model_state"
       service_args:
       -  "req.model_state.model_name = 'thorvald_ii'"
       -  "req.model_state.pose.orientation.w = 1.0"
   - sleep:
-      message: "zzz"
       duration: 3.0
+  - log:
+      message: "Relocalising the robot"
+      level: info
   - publish:
-      message: "Relocalising the robot."
       topic_name: "/initialpose"
       topic_latched: False
       topic_args:
@@ -89,25 +93,27 @@
   timeout: 0.0
 
 
-- name : '/row_detector/path_error'
+#- name : '/row_detector/path_error'
 #  signal_when : 'not published'
 #  safety_critical: False
-  signal_lambdas :
-    - expression: "lambda msg : math.isnan(msg.y)"
-      safety_critical: True
-  timeout : 0.0
+#  signal_lambdas :
+#    - expression: "lambda msg : math.isnan(msg.y)"
+#      safety_critical: True
+#  timeout : 0.0
 
 
-- name : '/row_detector/path_error'
+#- name : '/row_detector/path_error'
 #  signal_when : 'not published'
 #  safety_critical: False
-  signal_lambdas :
-    - expression: "lambda msg : not math.isnan(msg.y)"
-      safety_critical: False
-  execute:
-  - call:
-      message: "Safe to operate. Resetting safety tag."
-      service_name: "/sentor/reset_safety_tag"
-      service_args:
-      -  "req.data = True"
-  timeout : 0.0
+#  signal_lambdas :
+#    - expression: "lambda msg : not math.isnan(msg.y)"
+#      safety_critical: False
+#  execute:
+#  - log:
+#      message: "Safe to operate. Resetting safety tag"
+#      level: info
+#  - call:
+#      service_name: "/sentor/reset_safety_tag"
+#      service_args:
+#      -  "req.data = True"
+#  timeout : 0.0
