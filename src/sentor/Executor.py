@@ -45,7 +45,7 @@ class Executor(object):
                 self.init_log(process)
                 
             else:
-                rospy.logerr("Process of type {} not supported".format("\033[1m"+process_type+"\033[0m"))
+                rospy.logerr("Process of type '{}' not supported".format(process_type))
                 
         print "\n"
                     
