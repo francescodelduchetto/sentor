@@ -62,7 +62,8 @@
       - "cowsay"
       - "moo"
   lock_exec: False
-  timeout: 0.0                 
+  timeout: 0.0
+  oneshot: True                  
 
 
 - name: "/topological_navigation/feedback"
@@ -93,6 +94,7 @@
       -  "msg.pose.pose.orientation.w = 1.0"
   lock_exec: False
   timeout: 0.0
+  oneshot: True  
 
 
 #- name : '/row_detector/path_error'
@@ -101,7 +103,12 @@
 #  signal_lambdas :
 #    - expression: "lambda msg : math.isnan(msg.y)"
 #      safety_critical: True
-#  timeout : 0.0
+#  execute:
+#  - log:
+#      message: "ROBOT IS UNSAFE TO OPERATE AUTONOMOUSLY."
+#      level: error
+#  timeout : 1.0
+#  oneshot: True  
 
 
 #- name : '/row_detector/path_error'
@@ -112,10 +119,11 @@
 #      safety_critical: False
 #  execute:
 #  - log:
-#      message: "Safe to operate. Resetting safety tag"
+#      message: "ROBOT IS SAFE TO OPERATE AUTONOMOUSLY. Resetting safety tag."
 #      level: info
 #  - call:
 #      service_name: "/sentor/reset_safety_tag"
 #      service_args:
 #      -  "req.data = True"
-#  timeout : 0.0
+#  timeout : 2.0
+#  oneshot: True  

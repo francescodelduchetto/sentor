@@ -96,6 +96,7 @@ if __name__ == "__main__":
         processes = []
         lock_exec = False
         timeout = 0
+        oneshot = True
         if 'signal_when' in topic.keys():
             signal_when = topic['signal_when']
         if 'safety_critical' in topic.keys():
@@ -108,9 +109,11 @@ if __name__ == "__main__":
             lock_exec = topic['lock_exec']
         if 'timeout' in topic.keys():
             timeout = topic['timeout']
+        if 'oneshot' in topic.keys():
+            oneshot = topic['oneshot']
 
         topic_monitor = TopicMonitor(topic_name, signal_when, safety_critical, 
-                                     signal_lambdas, processes, lock_exec, timeout, 
+                                     signal_lambdas, processes, lock_exec, timeout, oneshot, 
                                      event_callback, safety_monitor.safety_callback)
 
         topic_monitors.append(topic_monitor)

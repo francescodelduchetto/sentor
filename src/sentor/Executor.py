@@ -249,9 +249,9 @@ class Executor(object):
         if msg is not None and msg_args is not None:
             args = [eval(arg) for arg in msg_args]
             args = tuple(args)
-            self.event_cb(message.format(*args), level, "")
+            self.event_cb("CUSTOM MSG: " + message.format(*args), level)
         else:
-            self.event_cb(message, level, "")
+            self.event_cb("CUSTOM MSG: " + message, level)
          
         
     def goal_cb(self, status, result):
