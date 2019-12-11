@@ -63,7 +63,6 @@
       - "moo"
   lock_exec: False
   timeout: 0.0
-  oneshot: True
   include: True                  
 
 
@@ -95,7 +94,6 @@
       -  "msg.pose.pose.orientation.w = 1.0"
   lock_exec: False
   timeout: 0.0
-  oneshot: True
   include: True   
 
 
@@ -111,7 +109,6 @@
       level: error
   lock_exec: False
   timeout : 0.0
-  oneshot: True
   include: False   
 
 
@@ -131,5 +128,4 @@
       -  "req.data = True"
   lock_exec: False
   timeout : 0.0
-  oneshot: True
   include: False   
