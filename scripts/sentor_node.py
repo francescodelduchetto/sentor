@@ -77,6 +77,7 @@ if __name__ == "__main__":
     start_srv = rospy.Service('/sentor/start_monitor', Empty, start_monitoring)
 
     event_pub = rospy.Publisher('/sentor/event', String, queue_size=10)
+    custom_msg_pub = rospy.Publisher('/sentor/custom_msg', String, queue_size=10)
     
     safety_pub_rate = rospy.get_param("~safety_pub_rate", "")
     safety_monitor = SafetyMonitor(safety_pub_rate)
@@ -97,6 +98,7 @@ if __name__ == "__main__":
         lock_exec = False
         timeout = 0
         oneshot = True
+        include = True
         if 'signal_when' in topic.keys():
             signal_when = topic['signal_when']
         if 'safety_critical' in topic.keys():
@@ -111,12 +113,14 @@ if __name__ == "__main__":
             timeout = topic['timeout']
         if 'oneshot' in topic.keys():
             oneshot = topic['oneshot']
+        if 'include' in topic.keys():
+            include = topic['include']
 
-        topic_monitor = TopicMonitor(topic_name, signal_when, safety_critical, 
-                                     signal_lambdas, processes, lock_exec, timeout, oneshot, 
-                                     event_callback, safety_monitor.safety_callback)
-
-        topic_monitors.append(topic_monitor)
+        if include:
+            topic_monitor = TopicMonitor(topic_name, signal_when, safety_critical, 
+                                         signal_lambdas, processes, lock_exec, timeout, oneshot, 
+                                         event_callback, safety_monitor.safety_callback)
+            topic_monitors.append(topic_monitor)
 
     time.sleep(1)
 

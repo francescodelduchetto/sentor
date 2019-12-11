@@ -141,20 +141,23 @@ class TopicMonitor(Thread):
                 return
             else:
                 self.is_instantiated = True
-
-        def cb(_):
-            self.event_callback("Topic %s is not published anymore" % self.topic_name, "warn")
-            if self.oneshot:
-                self.execute()
             
         def cb_loop(_):
             if self.safety_critical:
                 self.safety_callback(False)
             if not self.oneshot:
                 self.execute()
+                
+        def cb_oneshot(_):
+            if self.safety_critical:
+                self.event_callback("SAFETY CRITICAL: Topic %s is not published anymore" % self.topic_name, "warn")
+            else:
+                self.event_callback("Topic %s is not published anymore" % self.topic_name, "warn")
+            if self.oneshot:
+                self.execute()
 
-        timer = None
         timer_loop = None
+        timer_oneshot = None
         while not self._killed_event.isSet():
             while not self._stop_event.isSet():
                 if self.hz_monitor is not None:
@@ -169,20 +172,20 @@ class TopicMonitor(Thread):
                     if rate is None and self.is_topic_published: #and not self.is_latch:
                         self.is_topic_published = False
 
-                        timer = rospy.Timer(rospy.Duration.from_sec(self.timeout), cb, oneshot=True)
                         timer_loop = rospy.Timer(rospy.Duration.from_sec(self.timeout), cb_loop, oneshot=False)
+                        timer_oneshot = rospy.Timer(rospy.Duration.from_sec(self.timeout), cb_oneshot, oneshot=True)
                         # self.event_callback("Topic %s is not published anymore" % self.topic_name, "warn")
 
                     if rate is not None:# and not self.is_topic_published:# and not self.is_latch:
                         self.is_topic_published = True
 
-                        if timer is not None:
-                            timer.shutdown()
-                            timer = None
-                            
                         if timer_loop is not None:
                             timer_loop.shutdown()
                             timer_loop = None
+
+                        if timer_oneshot is not None:
+                            timer_oneshot.shutdown()
+                            timer_oneshot = None
 
                 # self._lock.acquire()
                 # while len(self.satisfied_expressions) > 0:
@@ -208,22 +211,25 @@ class TopicMonitor(Thread):
         if not self._stop_event.isSet():            
             if not expr in self.sat_expressions_timer.keys():
                 # self.satisfied_expressions.append(expr)
-                def cb(_):
-                    self.event_callback("Expression '%s' for %s seconds on topic %s satisfied" % (expr, self.timeout, self.topic_name), "warn", msg)
-                    if self.oneshot:
-                        if len(self.sat_expressions_timer.keys()) == len(self.signal_lambdas):
-                            self.execute(msg)
-                
                 def cb_loop(_):
                     if safety_critical_lambda:
                         self.safety_callback(False)
                     if not self.oneshot:
                         if len(self.sat_expressions_timer.keys()) == len(self.signal_lambdas):
+                            self.execute(msg)            
+            
+                def cb_oneshot(_):
+                    if safety_critical_lambda:
+                        self.event_callback("SAFETY CRITICAL: Expression '%s' for %s seconds on topic %s satisfied" % (expr, self.timeout, self.topic_name), "warn", msg)
+                    else:
+                        self.event_callback("Expression '%s' for %s seconds on topic %s satisfied" % (expr, self.timeout, self.topic_name), "warn", msg)
+                    if self.oneshot:
+                        if len(self.sat_expressions_timer.keys()) == len(self.signal_lambdas):
                             self.execute(msg)
                 
                 self._lock.acquire()
-                self.sat_expressions_timer.update({expr: rospy.Timer(rospy.Duration.from_sec(self.timeout), cb, oneshot=True)})
                 self.sat_expr_timeloops.update({expr: rospy.Timer(rospy.Duration.from_sec(self.timeout), cb_loop, oneshot=False)})
+                self.sat_expressions_timer.update({expr: rospy.Timer(rospy.Duration.from_sec(self.timeout), cb_oneshot, oneshot=True)})
                 self._lock.release()
             #print "sat", msg
 
@@ -244,7 +250,9 @@ class TopicMonitor(Thread):
         if not self._stop_event.isSet():
             if self.safety_critical:
                 self.safety_callback(False)
-            self.event_callback("Topic %s is published " % (self.topic_name), "warn")
+                self.event_callback("SAFETY CRITICAL: Topic %s is published " % (self.topic_name), "warn")
+            else:
+                self.event_callback("Topic %s is published " % (self.topic_name), "warn")
             self.execute(msg)
             # self._lock.acquire()
             # if not msg in self.satisfied_expressions:

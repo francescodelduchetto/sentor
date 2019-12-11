@@ -18,6 +18,8 @@ class Executor(object):
         self.lock_exec = lock_exec
         self.event_cb = event_cb
         
+        self.init_err_str = "Unable to initialise process of type {}: {}"
+        
         self._lock = Lock()
         self.processes = []
         
@@ -45,7 +47,7 @@ class Executor(object):
                 self.init_log(process)
                 
             else:
-                rospy.logerr("Process of type '{}' not supported".format(process_type))
+                self.event_cb("Error. Process of type '{}' not supported".format(process_type), "warn")
                 
         print "\n"
                     
@@ -63,6 +65,7 @@ class Executor(object):
             for arg in process["call"]["service_args"]: exec(arg)
 
             d = {}
+            d["name"] = "call"
             d["def_msg"] = ("Calling service '{}'".format(service_name), "info", req)
             d["func"] = "self.call(**kwargs)"
             d["kwargs"] = {}
@@ -73,7 +76,7 @@ class Executor(object):
             self.processes.append(d)
             
         except Exception as e:
-            rospy.logerr(e)
+            self.event_cb(self.init_err_str.format(d["name"], str(e)), "warn")
             
             
     def init_publish(self, process):
@@ -90,6 +93,7 @@ class Executor(object):
             for arg in process["publish"]["topic_args"]: exec(arg)
                 
             d = {}
+            d["name"] = "publish"
             d["def_msg"] = ("Publishing to topic '{}'".format(topic_name), "info", msg)
             d["func"] = "self.publish(**kwargs)"
             d["kwargs"] = {}
@@ -99,7 +103,7 @@ class Executor(object):
             self.processes.append(d)
             
         except Exception as e:
-            rospy.logerr(e)
+            self.event_cb(self.init_err_str.format(d["name"], str(e)), "warn")
             
             
     def init_action(self, process):
@@ -115,13 +119,15 @@ class Executor(object):
             action_client = actionlib.SimpleActionClient(namespace, action_spec)
             wait = action_client.wait_for_server(rospy.Duration(5.0))
             if not wait:
-                rospy.logerr("Action server with namespace '{}' and action spec '{}' not available.".format(namespace, spec))
+                e = "Action server with namespace '{}' and action spec '{}' not available".format(namespace, spec)
+                self.event_cb(self.init_err_str.format("action", e), "warn")
                 return
     
             goal = goal_class()
             for arg in process["action"]["goal_args"]: exec(arg)
                 
             d = {}
+            d["name"] = "action"
             d["def_msg"] = ("Sending goal for action with spec '{}'".format(spec), "info", goal)
             d["func"] = "self.action(**kwargs)"
             d["kwargs"] = {}
@@ -132,13 +138,14 @@ class Executor(object):
             self.processes.append(d)
         
         except Exception as e:
-            rospy.logerr(e)
+            self.event_cb(self.init_err_str.format(d["name"], str(e)), "warn")
             
         
     def init_sleep(self, process):
         
         try:
             d = {}
+            d["name"] = "sleep"
             d["def_msg"] = ("Sentor sleeping for {} seconds".format(process["sleep"]["duration"]), "info", "")
             d["func"] = "self.sleep(**kwargs)"
             d["kwargs"] = {}
@@ -147,13 +154,14 @@ class Executor(object):
             self.processes.append(d)
 
         except Exception as e:
-            rospy.logerr(e)
+            self.event_cb(self.init_err_str.format(d["name"], str(e)), "warn")            
             
             
     def init_shell(self, process):
         
         try:
             d = {}
+            d["name"] = "shell"
             d["def_msg"] = ("Executing shell commands {}".format(process["shell"]["cmd_args"]), "info", "")
             d["func"] = "self.shell(**kwargs)"
             d["kwargs"] = {}
@@ -162,13 +170,14 @@ class Executor(object):
             self.processes.append(d)
 
         except Exception as e:
-            rospy.logerr(e)
+            self.event_cb(self.init_err_str.format(d["name"], str(e)), "warn")
 
 
     def init_log(self, process):
         
         try:            
             d = {}
+            d["name"] = "log"
             d["func"] = "self.log(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["message"] = process["log"]["message"]
@@ -182,7 +191,7 @@ class Executor(object):
             self.processes.append(d)
 
         except Exception as e:
-            rospy.logerr(e)
+            self.event_cb(self.init_err_str.format(d["name"], str(e)), "warn")
             
         
     def execute(self, msg):
@@ -202,7 +211,7 @@ class Executor(object):
                 eval(process["func"])
                 
             except Exception as e:
-                rospy.logerr(e)
+                self.event_cb("Unable to execute process of type '{}': {}".format(process["name"], str(e)), "warn")
             
         if self.lock_exec:
             self._lock.release()
@@ -240,7 +249,9 @@ class Executor(object):
                      
         stdout, stderr = process.communicate()
         print stdout
-        print stderr
+        
+        if len(stderr) > 0:
+            self.event_cb("Unable to execute shell commands {}: {}".format(cmd_args, stderr), "warn")
         
     
     def log(self, message, level, msg_args):
