@@ -22,7 +22,7 @@ class TopicMonitor(Thread):
 
 
     def __init__(self, topic_name, signal_when, safety_critical, signal_lambdas, 
-                 processes, lock_exec, timeout, event_callback, safety_callback):
+                 processes, lock_exec, repeat_exec, timeout, event_callback, safety_callback):
         Thread.__init__(self)
 
         self.topic_name = topic_name
@@ -30,6 +30,7 @@ class TopicMonitor(Thread):
         self.safety_critical = safety_critical
         self.signal_lambdas = signal_lambdas
         self.processes = processes
+        self.repeat_exec = repeat_exec
         if timeout > 0:
             self.timeout = timeout
         else:
@@ -38,6 +39,7 @@ class TopicMonitor(Thread):
         self.safety_callback = safety_callback
         self.satisfied_expressions = []
         self.sat_expressions_timer = {}
+        self.sat_expr_repeat_timer = {}
         self.pub_monitor = None
         self.hz_monitor = None
         self.is_topic_published = True # initially assume it is
@@ -94,15 +96,10 @@ class TopicMonitor(Thread):
                     safety_critical_lambda = signal_lambda["safety_critical"]
                 else:
                     safety_critical_lambda = False
-                    
-                if "repeat" in signal_lambda.keys(): 
-                    repeat = signal_lambda["repeat"]
-                else:
-                    repeat = False
                 
                 if lambda_fn_str != "":
                     print "\t" + bcolors.OKGREEN + lambda_fn_str + bcolors.ENDC
-                    lambda_monitor = self._instantiate_lambda_monitor(real_topic, msg_class, lambda_fn_str, safety_critical_lambda, repeat)
+                    lambda_monitor = self._instantiate_lambda_monitor(real_topic, msg_class, lambda_fn_str, safety_critical_lambda)
 
                     # register cb that notifies when the lambda function is True
                     lambda_monitor.register_satisfied_cb(self.lambda_satisfied_cb)
@@ -129,8 +126,8 @@ class TopicMonitor(Thread):
 
         return pub
 
-    def _instantiate_lambda_monitor(self, real_topic, msg_class, lambda_fn_str, safety_critical_lambda, repeat):
-        filter = ROSTopicFilter(self.topic_name, lambda_fn_str, safety_critical_lambda, repeat)
+    def _instantiate_lambda_monitor(self, real_topic, msg_class, lambda_fn_str, safety_critical_lambda):
+        filter = ROSTopicFilter(self.topic_name, lambda_fn_str, safety_critical_lambda)
 
         rospy.Subscriber(real_topic, msg_class, filter.callback_filter)
 
@@ -198,25 +195,36 @@ class TopicMonitor(Thread):
                 time.sleep(0.3)
             time.sleep(1)
 
-    def lambda_satisfied_cb(self, expr, msg, safety_critical_lambda, repeat):
+    def lambda_satisfied_cb(self, expr, msg, safety_critical_lambda):
         if not self._stop_event.isSet():            
             if not expr in self.sat_expressions_timer.keys():
                 # self.satisfied_expressions.append(expr)
                 def cb(_):
                     if safety_critical_lambda:
-                        self.safety_callback(False)  
+                        self.safety_callback(False)
                         self.event_callback("SAFETY CRITICAL: Expression '%s' for %s seconds on topic %s satisfied" % (expr, self.timeout, self.topic_name), "warn", msg)
                     else:
                         self.event_callback("Expression '%s' for %s seconds on topic %s satisfied" % (expr, self.timeout, self.topic_name), "warn", msg)
-                    if len(self.sat_expressions_timer.keys()) == len(self.signal_lambdas):
-                        self.execute(msg)
-                    if repeat:
-                        self.sat_expressions_timer[expr].shutdown()
-                        self.sat_expressions_timer.pop(expr)
+                    if not self.repeat_exec:
+                        if len(self.sat_expressions_timer.keys()) == len(self.signal_lambdas):
+                            self.execute(msg)
                 
                 self._lock.acquire()
                 self.sat_expressions_timer.update({expr: rospy.Timer(rospy.Duration.from_sec(self.timeout), cb, oneshot=True)})
                 self._lock.release()
+            
+            if self.repeat_exec:
+                if not expr in self.sat_expr_repeat_timer.keys():
+                    def repeat_cb(_):
+                        if len(self.sat_expr_repeat_timer.keys()) == len(self.signal_lambdas):
+                            self.execute(msg)
+                            for expr in self.sat_expr_repeat_timer.keys():
+                                self.sat_expr_repeat_timer[expr].shutdown()
+                                self.sat_expr_repeat_timer.pop(expr)
+                        
+                    self._lock.acquire()
+                    self.sat_expr_repeat_timer.update({expr: rospy.Timer(rospy.Duration.from_sec(self.timeout), repeat_cb, oneshot=True)})
+                    self._lock.release()  
             #print "sat", msg
 
     def lambda_unsatisfied_cb(self, expr):
@@ -225,6 +233,12 @@ class TopicMonitor(Thread):
                 self._lock.acquire()
                 self.sat_expressions_timer[expr].shutdown()
                 self.sat_expressions_timer.pop(expr)
+                self._lock.release()
+                
+            if expr in self.sat_expr_repeat_timer.keys():
+                self._lock.acquire()
+                self.sat_expr_repeat_timer[expr].shutdown()
+                self.sat_expr_repeat_timer.pop(expr)
                 self._lock.release()
             # if not msg in self.unsatisfied_expressions and msg in self.satisfied_expressions:
             #     self.unsatisfied_expressions.append(msg)

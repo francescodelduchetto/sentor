@@ -3,11 +3,10 @@ import rospy, math
 
 class ROSTopicFilter(object):
 
-    def __init__(self, topic_name, lambda_fn_str, safety_critical, repeat):
+    def __init__(self, topic_name, lambda_fn_str, safety_critical):
         self.topic_name = topic_name
         self.lambda_fn_str = lambda_fn_str
         self.safety_critical = safety_critical
-        self.repeat = repeat
         self.lambda_fn = None
         try:
             self.lambda_fn = eval(self.lambda_fn_str)
@@ -39,7 +38,7 @@ class ROSTopicFilter(object):
 
         if self.filter_satisfied:
             for func in self.sat_callbacks:
-                func(self.lambda_fn_str, msg, self.safety_critical, self.repeat)
+                func(self.lambda_fn_str, msg, self.safety_critical)
         else:
             for func in self.unsat_callbacks:
                 func(self.lambda_fn_str)

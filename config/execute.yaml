@@ -45,7 +45,6 @@
   signal_lambdas:
   - expression: "lambda msg: msg.feedback.route == 'WayPoint1'"
     safety_critical: False
-    repeat: False
   execute:
   - log:
       message: "Navigating to charging node from {}"
@@ -63,6 +62,7 @@
       - "cowsay"
       - "moo"
   lock_exec: False
+  repeat_exec: False
   timeout: 0.0
   include: True                  
 
@@ -73,7 +73,6 @@
   signal_lambdas:
   - expression: "lambda msg: msg.feedback.route == 'WayPoint45'"
     safety_critical: False
-    repeat: False
   execute:
   - log:
       message: "Teleporting the robot"
@@ -95,6 +94,7 @@
       -  "msg.header.frame_id = '/map'"
       -  "msg.pose.pose.orientation.w = 1.0"
   lock_exec: False
+  repeat_exec: False
   timeout: 0.0
   include: True   
 
@@ -105,12 +105,12 @@
   signal_lambdas :
   - expression: "lambda msg : math.isnan(msg.y)"
     safety_critical: True
-    repeat: False
   execute:
   - log:
       message: "ROBOT IS UNSAFE TO OPERATE AUTONOMOUSLY."
       level: error
   lock_exec: False
+  repeat_exec: False
   timeout : 0.0
   include: False   
 
@@ -121,7 +121,6 @@
   signal_lambdas :
   - expression: "lambda msg : not math.isnan(msg.y)"
     safety_critical: False
-    repeat: False
   execute:
   - log:
       message: "ROBOT IS SAFE TO OPERATE AUTONOMOUSLY. Resetting safety tag."
@@ -131,5 +130,6 @@
       service_args:
       -  "req.data = True"
   lock_exec: False
+  repeat_exec: False
   timeout : 0.0
   include: False   
