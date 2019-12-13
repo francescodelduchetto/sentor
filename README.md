@@ -161,4 +161,4 @@ cd $(rospack find rasberry_bringup)/tmule && tmule -c rasberry-simple_robot_corn
 ```
 A Thorvald robot will appear in a gazebo environment and a topological map will be displayed in rviz. Then launch sentor as per the example launch command given above. Then send the robot to the `WayPoint1` node in the topological map. 
 
-You should view gazebo, rviz, the terminal in which you have launched the sentor node and another terminal in which you have echoed the topic `/safe_operation`. You will see that sentor executes the sequence for each monitor in the example config. 
+You should view gazebo, rviz, the terminal in which you have launched the sentor node and another terminal in which you have echoed the topic `/safe_operation`. You will see that sentor executes the processes for each monitor in the example config. 
