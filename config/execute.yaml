@@ -1,42 +1,58 @@
+# Top level arguments:
 # name: is the name of the topic to monitor
 # signal_when: optional, can be either 'not published' or 'published'. Respectively, it will send a warning when the topic is not published or when it is.
 # signal_lambdas: optional, it's a list of (pythonic) lambda expressions such that when they are satisfied a warning is sent. You can use the python package `math` in your lambda expressions.
+#                 See 'child arguments of `signal_lambdas`' below.
 # execute: optional, a list of processes to execute if `signal_when` is satisfied, or if all lambda expressions are satisfied. They will be executed in sequence. See `Child arguments of execute` below. 
-# lock_exec: optional (default=False), lock out other threads while this one is executing its sequence of processes.
 # timeout: optional (default=0), amount of time (in seconds) for which the signal has to be satisfied before sending the warning/executing processes.
+# lock_exec: optional (default=False), lock out other threads while this one is executing its sequence of processes.
+# repeat_exec: optional (default=False), default behaviour is to execute processes when the lambda expressions become satisfied after being unsatisfied. 
+#              If this argument is set to 'True' then processes will be executed every `timeout` seconds whilst the lambda expressions are satisfied.
+# include: optional (default=True), include this monitor (or not).  
+
+# Child arguments of `signal_lambdas`:
+# expression: the lambda expression.
+# saftey_critical: optional (default=False), tag this lambda expression as 'safety critical' (or not). If it is then when it is satisfied the boolean message from the topic `/safe_operation`
+#                   will be set to 'False'. Call the service `/sentor/reset_safety_tag` to reset this tag back to 'True'.
 
 # Child arguments of `execute`:
 # call: optional, call a rosservice.
 # publish: optional, publish to a rostopic.
 # action: optional, send a goal for an actionlib action.
 # sleep: optional, put the sentor node to sleep.
-# shell: optional, execute a shell command.  
+# shell: optional, execute a shell command.
+# log: optional, ros log a message.  
 
 # Child arguments of `call`:
-# message: optional, publish your own (string) message to the topic `/sentor/event` when `call` is executed. 
+# verbose: optional (default=True), setting this argument to 'False' will limit notifications from this process to the notification of errors only. 
 # service_name: the name of the service you are calling.
 # service_args: a list of service arguments specified in the service request class. Each arg must be prefixed by `req.`.
 
 # Child arguments of `publish`:
-# message: optional, publish your own (string) message to the topic `/sentor/event` when `publish` is executed.
+# verbose: optional (default=True), setting this argument to 'False' will limit notifications from this process to the notification of errors only. 
 # topic_name: the name of the topic you are publishing to. 
 # topic_latched: boolean specifying whether you are latching the topic (or not).
 # topic_args: a list of topic arguments specified in the topic's message class. Each arg must be prefixed by `msg.`.
 
 # Child arguments of `action`:
-# message: optional, publish your own (string) message to the topic `/sentor/event` when `action` is executed.
+# verbose: optional (default=True), setting this argument to 'False' will limit notifications from this process to the notification of errors only. 
 # namespace: the namespace of the action.
 # package: the ros package from which the action specification is retrieved. Specifically the action specification is retrieved from `package.msg`. 
 # action_spec: the action specification.
 # goal_args: a list of goal arguments specified in the action spec's goal class. Each arg must be prefixed by `goal.`.
 
 # Child arguments of `sleep`:
-# message: optional, publish your own (string) message to the topic `/sentor/event` when `sleep` is executed.
+# verbose: optional (default=True), setting this argument to 'False' will limit notifications from this process to the notification of errors only.  
 # duration: sleep the sentor node for `duration` seconds.
 
 # Child arguments of `shell`:
-# message: optional, publish your own (string) message to the topic `/sentor/event` when `shell` is executed.
+# verbose: verbose: optional (default=True), setting this argument to 'False' will limit notifications from this process to the notification of errors only. 
 # cmd_args: a list of shell command components.
+
+# Child arguments of `log`:
+# message: the message that you are logging. 
+# level: the log level (can be 'info', 'warn' or 'error').
+# msg_args: optional, you can supply message data from the topic you are monitoring in your logs. See the first monitor in this config for an example.
 
   
 - name: "/topological_navigation/feedback"
@@ -63,9 +79,9 @@
       cmd_args:
       - "cowsay"
       - "moo"
+  timeout: 0.0
   lock_exec: False
   repeat_exec: False
-  timeout: 0.0
   include: True                  
 
 
@@ -106,17 +122,14 @@
       topic_args:
       -  "msg.header.frame_id = '/map'"
       -  "msg.pose.pose.orientation.w = 1.0"
+  timeout: 0.0
   lock_exec: False
   repeat_exec: False
-  timeout: 0.0
   include: True   
 
 
 - name : '/row_detector/path_error'
-#  signal_when : 'not published'
-#  safety_critical: False
   signal_lambdas :
   - expression: "lambda msg : math.isnan(msg.y)"
-  timeout : 0.0
   include: False 
 
