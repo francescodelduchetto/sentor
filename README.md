@@ -100,7 +100,7 @@ Top-level arguments:
 - `name`: is the name of the topic to monitor
 - `signal_when`: optional, can be either 'not published' or 'published'. Respectively, it will send a warning when the topic is not published or when it is.
 - `signal_lambdas`: optional, it's a list of (pythonic) lambda expressions such that when they are satisfied a warning is sent. You can use the python package `math` in your lambda expressions. See 'child arguments of `signal_lambdas`' below.
-- `execute`: optional, a list of processes to execute after the warning is sent. These will be executed in sequence. See 'Child arguments of `execute`' below.
+- `execute`: optional, a list of processes to execute if `signal_when` is satisfied, or if all lambda expressions are satisfied. They will be executed in sequence. See `Child arguments of execute` below. 
 - `lock_exec`: optional (default=False), lock out other threads while this one is executing its sequence of processes.
 - `repeat_exec`: optional (default=False), default behaviour is to execute processes when the lambda expressions become satisfied after being unsatisfied. If this argument is set to 'True' then processes will be executed every `timeout` seconds whilst the lambda expressions are satisfied.
 - `timeout`: optional (default=0.1), amount of time (in seconds) for which the signal has to be satisfied before sending the warning.
