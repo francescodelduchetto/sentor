@@ -215,6 +215,7 @@ class TopicMonitor(Thread):
             
             if self.repeat_exec:
                 if not expr in self.sat_expr_repeat_timer.keys():
+                    
                     def repeat_cb(_):
                         if len(self.sat_expr_repeat_timer.keys()) == len(self.signal_lambdas):
                             self.execute(msg)

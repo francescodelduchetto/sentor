@@ -77,7 +77,6 @@ if __name__ == "__main__":
     start_srv = rospy.Service('/sentor/start_monitor', Empty, start_monitoring)
 
     event_pub = rospy.Publisher('/sentor/event', String, queue_size=10)
-    custom_msg_pub = rospy.Publisher('/sentor/custom_msg', String, queue_size=10)
     
     safety_pub_rate = rospy.get_param("~safety_pub_rate", "")
     safety_monitor = SafetyMonitor(safety_pub_rate)

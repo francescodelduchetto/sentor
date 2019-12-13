@@ -18,8 +18,7 @@ class Executor(object):
         self.lock_exec = lock_exec
         self.event_cb = event_cb
         
-        self.init_err_str = "Unable to initialise process of type {}: {}"
-        
+        self.init_err_str = "Unable to initialise process of type '{}': {}"
         self._lock = Lock()
         self.processes = []
         
@@ -47,7 +46,7 @@ class Executor(object):
                 self.init_log(process)
                 
             else:
-                self.event_cb("Error. Process of type '{}' not supported".format(process_type), "warn")
+                self.event_cb("Process of type '{}' not supported".format(process_type), "warn")
                 
         print "\n"
                     
@@ -66,17 +65,19 @@ class Executor(object):
 
             d = {}
             d["name"] = "call"
+            d["verbose"] = process["call"]["verbose"]
             d["def_msg"] = ("Calling service '{}'".format(service_name), "info", req)
             d["func"] = "self.call(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["service_name"] = service_name
             d["kwargs"]["service_client"] = service_client
             d["kwargs"]["req"] = req
+            d["kwargs"]["verbose"] = process["call"]["verbose"]
             
             self.processes.append(d)
             
         except Exception as e:
-            self.event_cb(self.init_err_str.format(d["name"], str(e)), "warn")
+            self.event_cb(self.init_err_str.format("call", str(e)), "warn")
             
             
     def init_publish(self, process):
@@ -94,6 +95,7 @@ class Executor(object):
                 
             d = {}
             d["name"] = "publish"
+            d["verbose"] = process["publish"]["verbose"]
             d["def_msg"] = ("Publishing to topic '{}'".format(topic_name), "info", msg)
             d["func"] = "self.publish(**kwargs)"
             d["kwargs"] = {}
@@ -103,7 +105,7 @@ class Executor(object):
             self.processes.append(d)
             
         except Exception as e:
-            self.event_cb(self.init_err_str.format(d["name"], str(e)), "warn")
+            self.event_cb(self.init_err_str.format("publish", str(e)), "warn")
             
             
     def init_action(self, process):
@@ -128,17 +130,19 @@ class Executor(object):
                 
             d = {}
             d["name"] = "action"
+            d["verbose"] = process["action"]["verbose"]
             d["def_msg"] = ("Sending goal for action with spec '{}'".format(spec), "info", goal)
             d["func"] = "self.action(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["spec"] = spec
             d["kwargs"]["action_client"] = action_client
             d["kwargs"]["goal"] = goal
+            d["kwargs"]["verbose"] = process["action"]["verbose"]
             
             self.processes.append(d)
         
         except Exception as e:
-            self.event_cb(self.init_err_str.format(d["name"], str(e)), "warn")
+            self.event_cb(self.init_err_str.format("action", str(e)), "warn")
             
         
     def init_sleep(self, process):
@@ -146,6 +150,7 @@ class Executor(object):
         try:
             d = {}
             d["name"] = "sleep"
+            d["verbose"] = process["sleep"]["verbose"]
             d["def_msg"] = ("Sentor sleeping for {} seconds".format(process["sleep"]["duration"]), "info", "")
             d["func"] = "self.sleep(**kwargs)"
             d["kwargs"] = {}
@@ -154,7 +159,7 @@ class Executor(object):
             self.processes.append(d)
 
         except Exception as e:
-            self.event_cb(self.init_err_str.format(d["name"], str(e)), "warn")            
+            self.event_cb(self.init_err_str.format("sleep", str(e)), "warn")            
             
             
     def init_shell(self, process):
@@ -162,6 +167,7 @@ class Executor(object):
         try:
             d = {}
             d["name"] = "shell"
+            d["verbose"] = process["shell"]["verbose"]
             d["def_msg"] = ("Executing shell commands {}".format(process["shell"]["cmd_args"]), "info", "")
             d["func"] = "self.shell(**kwargs)"
             d["kwargs"] = {}
@@ -170,7 +176,7 @@ class Executor(object):
             self.processes.append(d)
 
         except Exception as e:
-            self.event_cb(self.init_err_str.format(d["name"], str(e)), "warn")
+            self.event_cb(self.init_err_str.format("shell", str(e)), "warn")
 
 
     def init_log(self, process):
@@ -178,6 +184,7 @@ class Executor(object):
         try:            
             d = {}
             d["name"] = "log"
+            d["verbose"] = False
             d["func"] = "self.log(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["message"] = process["log"]["message"]
@@ -191,7 +198,7 @@ class Executor(object):
             self.processes.append(d)
 
         except Exception as e:
-            self.event_cb(self.init_err_str.format(d["name"], str(e)), "warn")
+            self.event_cb(self.init_err_str.format("log", str(e)), "warn")
             
         
     def execute(self, msg):
@@ -204,7 +211,7 @@ class Executor(object):
         for process in self.processes:
             rospy.sleep(0.1) # needed when using slackeros
             try:
-                if "def_msg" in process.keys():
+                if process["verbose"] and "def_msg" in process.keys():
                     self.event_cb(process["def_msg"][0], process["def_msg"][1], process["def_msg"][2])
                     
                 kwargs = process["kwargs"]            
@@ -217,13 +224,13 @@ class Executor(object):
             self._lock.release()
             
 
-    def call(self, service_name, service_client, req):
+    def call(self, service_name, service_client, req, verbose):
         
         resp = service_client(req)
         
-        if resp.success:
+        if verbose and resp.success:
             self.event_cb("Call to service '{}' succeeded".format(service_name), "info", req)
-        else:
+        elif not resp.success:
             self.event_cb("Call to service '{}' failed".format(service_name), "warn", req)
         
         
@@ -231,9 +238,12 @@ class Executor(object):
         pub.publish(msg)
         
         
-    def action(self, spec, action_client, goal):
+    def action(self, spec, action_client, goal, verbose):
+        
         self.spec = spec
         self.goal = goal
+        self.verbose_action = verbose
+        
         action_client.send_goal(goal, self.goal_cb)
         
        
@@ -267,10 +277,10 @@ class Executor(object):
         
     def goal_cb(self, status, result):
         
-        if status == 3:
+        if self.verbose_action and status == 3:
             self.event_cb("Goal achieved for action with spec '{}'".format(self.spec), "info", self.goal)
         elif status == 2 or status == 6:
             self.event_cb("Goal preempted for action with spec '{}'".format(self.spec), "warn", self.goal)
-        else:
+        elif status != 3:
             self.event_cb("Goal failed for action with spec '{}'".format(self.spec), "warn", self.goal)
 #####################################################################################
