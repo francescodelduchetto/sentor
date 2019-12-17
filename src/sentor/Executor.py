@@ -65,14 +65,14 @@ class Executor(object):
 
             d = {}
             d["name"] = "call"
-            d["verbose"] = process["call"]["verbose"]
+            d["verbose"] = self.is_verbose(process["call"])
             d["def_msg"] = ("Calling service '{}'".format(service_name), "info", req)
             d["func"] = "self.call(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["service_name"] = service_name
             d["kwargs"]["service_client"] = service_client
             d["kwargs"]["req"] = req
-            d["kwargs"]["verbose"] = process["call"]["verbose"]
+            d["kwargs"]["verbose"] = self.is_verbose(process["call"])
             
             self.processes.append(d)
             
@@ -95,7 +95,7 @@ class Executor(object):
                 
             d = {}
             d["name"] = "publish"
-            d["verbose"] = process["publish"]["verbose"]
+            d["verbose"] = self.is_verbose(process["publish"])
             d["def_msg"] = ("Publishing to topic '{}'".format(topic_name), "info", msg)
             d["func"] = "self.publish(**kwargs)"
             d["kwargs"] = {}
@@ -130,14 +130,14 @@ class Executor(object):
                 
             d = {}
             d["name"] = "action"
-            d["verbose"] = process["action"]["verbose"]
+            d["verbose"] = self.is_verbose(process["action"])
             d["def_msg"] = ("Sending goal for action with spec '{}'".format(spec), "info", goal)
             d["func"] = "self.action(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["spec"] = spec
             d["kwargs"]["action_client"] = action_client
             d["kwargs"]["goal"] = goal
-            d["kwargs"]["verbose"] = process["action"]["verbose"]
+            d["kwargs"]["verbose"] = self.is_verbose(process["action"])
             
             self.processes.append(d)
         
@@ -150,7 +150,7 @@ class Executor(object):
         try:
             d = {}
             d["name"] = "sleep"
-            d["verbose"] = process["sleep"]["verbose"]
+            d["verbose"] = self.is_verbose(process["sleep"])
             d["def_msg"] = ("Sentor sleeping for {} seconds".format(process["sleep"]["duration"]), "info", "")
             d["func"] = "self.sleep(**kwargs)"
             d["kwargs"] = {}
@@ -167,7 +167,7 @@ class Executor(object):
         try:
             d = {}
             d["name"] = "shell"
-            d["verbose"] = process["shell"]["verbose"]
+            d["verbose"] = self.is_verbose(process["shell"])
             d["def_msg"] = ("Executing shell commands {}".format(process["shell"]["cmd_args"]), "info", "")
             d["func"] = "self.shell(**kwargs)"
             d["kwargs"] = {}
@@ -199,6 +199,16 @@ class Executor(object):
 
         except Exception as e:
             self.event_cb(self.init_err_str.format("log", str(e)), "warn")
+            
+            
+    def is_verbose(self, process):
+        
+        if "verbose" in process.keys():
+            verbose = process["verbose"]
+        else:
+            verbose = True
+            
+        return verbose
             
         
     def execute(self, msg):

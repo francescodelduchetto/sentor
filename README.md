@@ -99,11 +99,11 @@ The config file contains the list of topics to be monitored and the definition, 
 Top-level arguments:
 - `name`: is the name of the topic to monitor
 - `signal_when`: optional, can be either 'not published' or 'published'. Respectively, it will send a warning when the topic is not published or when it is.
-- `signal_lambdas`: optional, it's a list of (pythonic) lambda expressions such that when they are satisfied a warning is sent. You can use the python package `math` in your lambda expressions. See 'child arguments of `signal_lambdas`' below.
-- `execute`: optional, a list of processes to execute if `signal_when` is satisfied, or if all lambda expressions are satisfied. They will be executed in sequence. See `Child arguments of execute` below. 
+- `signal_lambdas`: optional, it's a list of (pythonic) lambda expressions such that when they are satisfied a warning is sent. You can use the python package `math` in your lambda expressions. See 'Child arguments of `signal_lambdas`' below.
+- `execute`: optional, a list of processes to execute if `signal_when` is satisfied, or if all lambda expressions are satisfied. They will be executed in sequence. See 'Child arguments of `execute`' below. 
+- `timeout`: optional (default=0.1), amount of time (in seconds) for which the signal has to be satisfied before sending the warning/executing processes.
 - `lock_exec`: optional (default=False), lock out other threads while this one is executing its sequence of processes.
-- `repeat_exec`: optional (default=False), default behaviour is to execute processes when the lambda expressions become satisfied after being unsatisfied. If this argument is set to 'True' then processes will be executed every `timeout` seconds whilst the lambda expressions are satisfied.
-- `timeout`: optional (default=0.1), amount of time (in seconds) for which the signal has to be satisfied before sending the warning.
+- `repeat_exec`: optional (default=False), default behaviour is to execute processes once after the lambda expressions have been satisfied for `timeout` seconds.  They will not execute again until a change occurs (i.e. lambda expressions become unsatisfied, then satisfied again). If `repeat_exec` is set to 'True' then processes will be executed every `timeout` seconds whilst the lambda expressions are satisfied.
 - `include`:  optional (default=True), include this monitor (or not).
 
 Child arguments of `signal_lambdas`:
