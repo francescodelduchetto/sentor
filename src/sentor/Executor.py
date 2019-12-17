@@ -213,10 +213,10 @@ class Executor(object):
         
     def execute(self, msg):
         
-        self.msg = msg
-        
         if self.lock_exec:
             self._lock.acquire()
+            
+        self.msg = msg
         
         for process in self.processes:
             rospy.sleep(0.1) # needed when using slackeros
