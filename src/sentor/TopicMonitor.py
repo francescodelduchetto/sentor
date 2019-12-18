@@ -148,9 +148,15 @@ class TopicMonitor(Thread):
                 self.event_callback("SAFETY CRITICAL: Topic %s is not published anymore" % self.topic_name, "warn")
             else:
                 self.event_callback("Topic %s is not published anymore" % self.topic_name, "warn")
-            self.execute()
+            if not self.repeat_exec:
+                self.execute()
+
+        def repeat_cb(_):
+            if self.repeat_exec:
+                self.execute()
 
         timer = None
+        timer_repeat = None
         while not self._killed_event.isSet():
             while not self._stop_event.isSet():
                 if self.hz_monitor is not None:
@@ -166,6 +172,9 @@ class TopicMonitor(Thread):
                         self.is_topic_published = False
 
                         timer = rospy.Timer(rospy.Duration.from_sec(self.timeout), cb, oneshot=True)
+                        
+                        if self.repeat_exec:
+                            timer_repeat = rospy.Timer(rospy.Duration.from_sec(self.timeout), repeat_cb, oneshot=False)
                         # self.event_callback("Topic %s is not published anymore" % self.topic_name, "warn")
 
                     if rate is not None:# and not self.is_topic_published:# and not self.is_latch:
@@ -174,6 +183,11 @@ class TopicMonitor(Thread):
                         if timer is not None:
                             timer.shutdown()
                             timer = None
+                        
+                        if self.repeat_exec:
+                            if timer_repeat is not None:
+                                timer_repeat.shutdown()
+                                timer_repeat = None
 
                 # self._lock.acquire()
                 # while len(self.satisfied_expressions) > 0:
