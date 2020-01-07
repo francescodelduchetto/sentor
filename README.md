@@ -127,7 +127,7 @@ Child arguments of `call`:
 Child arguments of `publish`:
 - `verbose`: optional (default=True), setting this argument to 'False' will limit notifications from this process to the notification of errors only. 
 - `topic_name`: the name of the topic you are publishing to. 
-- `topic_latched`: boolean specifying whether you are latching the topic (or not).
+- `topic_latched`: optional (default=False), boolean specifying whether you are latching the topic (or not).
 - `topic_args`: a list of topic arguments specified in the topic's message class. Each arg must be prefixed by `msg.`
 
 Child arguments of `action`:
