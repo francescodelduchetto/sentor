@@ -84,7 +84,11 @@ class Executor(object):
         
         try:
             topic_name = process["publish"]["topic_name"]
-            topic_latched = process["publish"]["topic_latched"]
+            
+            if "topic_latched" in process["publish"].keys():
+                topic_latched = process["publish"]["topic_latched"]
+            else:
+                topic_latched = False
             
             msg_class, real_topic, _ = rostopic.get_topic_class(topic_name)
             pub = rospy.Publisher(real_topic, msg_class, latch=topic_latched, 
@@ -211,7 +215,7 @@ class Executor(object):
         return verbose
             
         
-    def execute(self, msg):
+    def execute(self, msg=None):
         
         if self.lock_exec:
             self._lock.acquire()
@@ -270,7 +274,7 @@ class Executor(object):
         stdout, stderr = process.communicate()
         print stdout
         
-        if len(stderr) > 0:
+        if stderr:
             self.event_cb("Unable to execute shell commands {}: {}".format(cmd_args, stderr), "warn")
         
     
