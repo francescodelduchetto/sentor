@@ -24,30 +24,30 @@
 - name : '/battery_state'
   signal_when : 'not published'
   signal_lambdas :
-    - 'lambda msg : msg.lifePercent < 10'
-    - 'lambda msg : msg.lifePercent < 5'
+    - expression: 'lambda msg : msg.lifePercent < 10'
+    - expression: 'lambda msg : msg.lifePercent < 5'
 
 - name : '/motor_status'
   signal_when : 'not published'
   signal_lambdas :
-    - 'lambda msg : msg.emergency_button_pressed == True'
-    - 'lambda msg : msg.emergency_button_pressed == False'
+    - expression: 'lambda msg : msg.emergency_button_pressed == True'
+    - expression: 'lambda msg : msg.emergency_button_pressed == False'
   timeout : 5
 
 - name : '/motor_status'
   signal_lambdas :
-    - 'lambda msg : msg.bumper_pressed == True'
+    - expression: 'lambda msg : msg.bumper_pressed == True'
   timeout : 60
 
 - name : '/virtual_bumper_event'
   signal_lambdas :
-    - 'lambda msg : msg.freeRunStarted == True'
+    - expression: 'lambda msg : msg.freeRunStarted == True'
 
 - name : '/diagnostics_toplevel_state'
   signal_when : 'not published'
   signal_lambdas :
-    - 'lambda msg : msg.level == 1'
-    - 'lambda msg : msg.level == 2'
+    - expression: 'lambda msg : msg.level == 1'
+    - expression: 'lambda msg : msg.level == 2'
   timeout : 3
 
 #- name : '/interface/buttonPressedWhileDisabled'
