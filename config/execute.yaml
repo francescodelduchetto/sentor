@@ -28,6 +28,7 @@
   timeout: 0.0
   lock_exec: False
   repeat_exec: False
+  default_notifications: True
   include: True                  
 
 
@@ -71,6 +72,7 @@
   timeout: 0.0
   lock_exec: False
   repeat_exec: False
+  default_notifications: True
   include: True   
 
 

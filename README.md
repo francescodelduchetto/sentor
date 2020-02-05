@@ -105,6 +105,7 @@ Top-level arguments:
 - `timeout`: optional (default=0.1), amount of time (in seconds) for which the signal has to be satisfied before sending the warning/executing processes.
 - `lock_exec`: optional (default=False), lock out other threads while this one is executing its sequence of processes.
 - `repeat_exec`: optional (default=False), default behaviour is to execute processes once after conditions (`signal_when` or lambdas) have been satisfied for `timeout` seconds.  They will not execute again until a change occurs (i.e. conditions become unsatisfied, then satisfied again). If `repeat_exec` is set to 'True' then processes will be executed every `timeout` seconds whilst the conditions are satisfied.
+- `default_notifications`:  optional (default=True), setting this to 'False' will turn off the default warnings given when conditions (`signal_when` or lambdas) are satisfied.
 - `include`:  optional (default=True), include this monitor (or not).
 
 Child arguments of `signal_lambdas`:
