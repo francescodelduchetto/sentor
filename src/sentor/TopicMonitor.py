@@ -22,7 +22,7 @@ class TopicMonitor(Thread):
 
 
     def __init__(self, topic_name, signal_when, safety_critical, signal_lambdas, 
-                 processes, lock_exec, repeat_exec, timeout, event_callback, safety_callback):
+                 processes, lock_exec, repeat_exec, timeout, default_notifications, event_callback, safety_callback):
         Thread.__init__(self)
 
         self.topic_name = topic_name
@@ -35,6 +35,7 @@ class TopicMonitor(Thread):
             self.timeout = timeout
         else:
             self.timeout = 0.1
+        self.default_notifications = default_notifications
         self.event_callback = event_callback
         self.safety_callback = safety_callback
         self.satisfied_expressions = []
@@ -145,8 +146,9 @@ class TopicMonitor(Thread):
         def cb(_):
             if self.safety_critical:
                 self.safety_callback(False)
+            if self.default_notifications and self.safety_critical:
                 self.event_callback("SAFETY CRITICAL: Topic %s is not published anymore" % self.topic_name, "warn")
-            else:
+            elif self.default_notifications:
                 self.event_callback("Topic %s is not published anymore" % self.topic_name, "warn")
             if not self.repeat_exec:
                 self.execute()
@@ -216,8 +218,9 @@ class TopicMonitor(Thread):
                 def cb(_):
                     if safety_critical_lambda:
                         self.safety_callback(False)
+                    if self.default_notifications and safety_critical_lambda:
                         self.event_callback("SAFETY CRITICAL: Expression '%s' for %s seconds on topic %s satisfied" % (expr, self.timeout, self.topic_name), "warn", msg)
-                    else:
+                    elif self.default_notifications:
                         self.event_callback("Expression '%s' for %s seconds on topic %s satisfied" % (expr, self.timeout, self.topic_name), "warn", msg)
                     if not self.repeat_exec:
                         if len(self.sat_expressions_timer.keys()) == len(self.signal_lambdas):
@@ -263,8 +266,9 @@ class TopicMonitor(Thread):
         if not self._stop_event.isSet():
             if self.safety_critical:
                 self.safety_callback(False)
+            if self.default_notifications and self.safety_critical:
                 self.event_callback("SAFETY CRITICAL: Topic %s is published " % (self.topic_name), "warn")
-            else:
+            elif self.default_notifications:
                 self.event_callback("Topic %s is published " % (self.topic_name), "warn")
             self.execute(msg)
             # self._lock.acquire()

@@ -97,6 +97,7 @@ if __name__ == "__main__":
         lock_exec = False
         repeat_exec = False
         timeout = 0
+        default_notifications = True
         include = True
         if 'signal_when' in topic.keys():
             signal_when = topic['signal_when']
@@ -112,13 +113,15 @@ if __name__ == "__main__":
             repeat_exec = topic['repeat_exec']
         if 'timeout' in topic.keys():
             timeout = topic['timeout']
+        if 'default_notifications' in topic.keys():
+            default_notifications = topic['default_notifications']
         if 'include' in topic.keys():
             include = topic['include']
 
         if include:
             topic_monitor = TopicMonitor(topic_name, signal_when, safety_critical, 
                                          signal_lambdas, processes, lock_exec, repeat_exec, timeout, 
-                                         event_callback, safety_monitor.safety_callback)
+                                         default_notifications, event_callback, safety_monitor.safety_callback)
             topic_monitors.append(topic_monitor)
 
     time.sleep(1)
