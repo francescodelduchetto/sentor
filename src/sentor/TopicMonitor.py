@@ -144,17 +144,19 @@ class TopicMonitor(Thread):
                 self.is_instantiated = True
                 
         def cb(_):
-            if self.safety_critical:
-                self.safety_callback(False)
             if self.default_notifications and self.safety_critical:
                 self.event_callback("SAFETY CRITICAL: Topic %s is not published anymore" % self.topic_name, "warn")
             elif self.default_notifications:
                 self.event_callback("Topic %s is not published anymore" % self.topic_name, "warn")
             if not self.repeat_exec:
+                if self.safety_critical:
+                    self.safety_callback(False)
                 self.execute()
 
         def repeat_cb(_):
             if self.repeat_exec:
+                if self.safety_critical:
+                    self.safety_callback(False)
                 self.execute()
 
         timer = None
@@ -216,13 +218,13 @@ class TopicMonitor(Thread):
             if not expr in self.sat_expressions_timer.keys():
                 # self.satisfied_expressions.append(expr)
                 def cb(_):
-                    if safety_critical_lambda:
-                        self.safety_callback(False)
                     if self.default_notifications and safety_critical_lambda:
                         self.event_callback("SAFETY CRITICAL: Expression '%s' for %s seconds on topic %s satisfied" % (expr, self.timeout, self.topic_name), "warn", msg)
                     elif self.default_notifications:
                         self.event_callback("Expression '%s' for %s seconds on topic %s satisfied" % (expr, self.timeout, self.topic_name), "warn", msg)
                     if not self.repeat_exec:
+                        if safety_critical_lambda:
+                            self.safety_callback(False)
                         if len(self.sat_expressions_timer.keys()) == len(self.signal_lambdas):
                             self.execute(msg)
                 
@@ -234,6 +236,8 @@ class TopicMonitor(Thread):
                 if not expr in self.sat_expr_repeat_timer.keys():
                     
                     def repeat_cb(_):
+                        if safety_critical_lambda:
+                            self.safety_callback(False)
                         if len(self.sat_expr_repeat_timer.keys()) == len(self.signal_lambdas):
                             self.execute(msg)
                             for expr in self.sat_expr_repeat_timer.keys():
