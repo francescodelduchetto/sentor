@@ -14,8 +14,9 @@ from std_srvs.srv import SetBool, SetBoolResponse
 class SafetyMonitor(object):
     
     
-    def __init__(self, rate):
+    def __init__(self, rate, topic_monitors):
         
+        self.topic_monitors = topic_monitors
         self.safe_operation = True
 
         self.safety_pub = rospy.Publisher('/safe_operation', Bool, queue_size=10)
@@ -36,11 +37,13 @@ class SafetyMonitor(object):
 
 
     def safety_pub_cb(self, event=None):
-        self.safety_pub.publish(Bool(self.safe_operation))
         
+        threads_are_safe = [monitor.thread_is_safe for monitor in self.topic_monitors]
         
-    def safety_callback(self, thread_is_safe):
-        
-        if not thread_is_safe:
+        if all(threads_are_safe):
+            self.safe_operation = True
+        else:
             self.safe_operation = False
+            
+        self.safety_pub.publish(Bool(self.safe_operation))
 #####################################################################################

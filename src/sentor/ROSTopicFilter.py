@@ -41,7 +41,7 @@ class ROSTopicFilter(object):
                 func(self.lambda_fn_str, msg, self.safety_critical)
         else:
             for func in self.unsat_callbacks:
-                func(self.lambda_fn_str)
+                func(self.lambda_fn_str, self.safety_critical)
 
 
         # if not self.filter_satisfied and not self.value_read:
