@@ -1,9 +1,4 @@
 ﻿
-
-
-﻿
-
-
 > # ROS messages monitoring node
 
 Continuously monitor topic messages. Send warnings and execute other processes when certain conditions on the messages are satisfied. 
@@ -156,7 +151,7 @@ Child arguments of `log`:
 ## Safety critical conditions
 A topic monitor's signal when condition, and each of its lambda expressions, can be tagged as *safety critical*. If any safety critical condition in any topic monitor is satisfied then the boolean message from the topic `safe operation` will be set to False. 
 
-By setting the arg `auto_safety_tagging` (see `sentor.launch`) to True sentor will automatically set safe operation to True when all safety critical condition across all monitors are unsatisfied.  If `auto_safety_tagging` is set to `False` then the service `/sentor/set_safety_tag` must be called.
+By setting the arg `auto_safety_tagging` (see `sentor.launch`) to True sentor will automatically set `safe operation` to True when all safety critical condition across all monitors are unsatisfied.  If `auto_safety_tagging` is set to `False` then the service `/sentor/set_safety_tag` must be called.
 
 ## Using sentor with this example config
 You will need the RASberry repo (<a href="https://github.com/LCAS/RASberry">get it here</a>) and all its dependencies. Also install `cowsay`. Create a file `.rasberryrc` in your home directory and put the following inside it:
