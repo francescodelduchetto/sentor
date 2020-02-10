@@ -39,12 +39,9 @@
   - expression: "lambda msg: msg.feedback.route == 'WayPoint45'"
     safety_critical: False
   execute:
-  - log:
-      message: "Resetting safety tag"
-      level: info
   - call:
       verbose: True
-      service_name: "/sentor/reset_safety_tag"
+      service_name: "/sentor/set_safety_tag"
       service_args:
       -  "req.data = True"
   - log:

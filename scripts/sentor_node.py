@@ -78,6 +78,10 @@ if __name__ == "__main__":
 
     event_pub = rospy.Publisher('/sentor/event', String, queue_size=10)
 
+    safety_pub_rate = rospy.get_param("~safety_pub_rate", "")    
+    auto_safety_tagging = rospy.get_param("~auto_safety_tagging", "")        
+    safety_monitor = SafetyMonitor(safety_pub_rate, auto_safety_tagging, event_callback)
+
     topic_monitors = []
     print "Monitoring topics:"
     for topic in topics:
@@ -117,13 +121,11 @@ if __name__ == "__main__":
 
         if include:
             topic_monitor = TopicMonitor(topic_name, signal_when, safety_critical, 
-                                         signal_lambdas, processes, lock_exec, repeat_exec, timeout, 
-                                         default_notifications, event_callback)
+                                         signal_lambdas, processes, lock_exec, repeat_exec, 
+                                         timeout, default_notifications, event_callback)
             topic_monitors.append(topic_monitor)
+            safety_monitor.register_monitors(topic_monitor)
             
-    safety_pub_rate = rospy.get_param("~safety_pub_rate", "")
-    safety_monitor = SafetyMonitor(safety_pub_rate, topic_monitors)
-
     time.sleep(1)
 
     # start monitoring
