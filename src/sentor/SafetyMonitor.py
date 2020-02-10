@@ -14,17 +14,50 @@ from std_srvs.srv import SetBool, SetBoolResponse
 class SafetyMonitor(object):
     
     
-    def __init__(self, rate):
+    def __init__(self, rate, auto_tagging, event_cb):
         
-        self.safe_operation = True
+        self.auto_tagging = auto_tagging
+        self.event_cb = event_cb
+        self.topic_monitors = []
+        
+        self.safe_operation = True        
+        self.safe_msg_sent = False
+        self.unsafe_msg_sent = False
 
         self.safety_pub = rospy.Publisher('/safe_operation', Bool, queue_size=10)
         rospy.Timer(rospy.Duration(1.0/rate), self.safety_pub_cb)
         
-        rospy.Service('/sentor/reset_safety_tag', SetBool, self.reset)
+        rospy.Service('/sentor/set_safety_tag', SetBool, self.set_safety_tag)
+
+
+    def register_monitors(self, topic_monitor):
+        self.topic_monitors.append(topic_monitor)
         
         
-    def reset(self, req):
+    def safety_pub_cb(self, event=None):
+        
+        if self.topic_monitors:
+            threads_are_safe = [monitor.thread_is_safe for monitor in self.topic_monitors]
+            
+            if all(threads_are_safe) and self.auto_tagging:
+                self.safe_operation = True
+            elif not all(threads_are_safe):
+                self.safe_operation = False
+                
+            self.safety_pub.publish(Bool(self.safe_operation))
+
+            if all(threads_are_safe) and not self.safe_msg_sent:
+                self.event_cb("SAFE OPERATION: TRUE", "info")
+                self.safe_msg_sent = True
+                self.unsafe_msg_sent = False
+                
+            elif not all(threads_are_safe) and not self.unsafe_msg_sent:
+                self.event_cb("SAFE OPERATION: FALSE", "warn")
+                self.safe_msg_sent = False
+                self.unsafe_msg_sent = True
+        
+        
+    def set_safety_tag(self, req):
         
         self.safe_operation = req.data        
         
@@ -33,14 +66,4 @@ class SafetyMonitor(object):
         ans.message = "safe operation: {}".format(req.data)
         
         return ans
-
-
-    def safety_pub_cb(self, event=None):
-        self.safety_pub.publish(Bool(self.safe_operation))
-        
-        
-    def safety_callback(self, thread_is_safe):
-        
-        if not thread_is_safe:
-            self.safe_operation = False
 #####################################################################################

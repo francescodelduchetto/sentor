@@ -1,6 +1,4 @@
 ﻿
-
-
 > # ROS messages monitoring node
 
 Continuously monitor topic messages. Send warnings and execute other processes when certain conditions on the messages are satisfied. 
@@ -45,6 +43,7 @@ The config file contains the list of topics to be monitored and the definition, 
   timeout: 0.0
   lock_exec: False
   repeat_exec: False
+  default_notifications: True
   include: True                  
 
 
@@ -55,12 +54,9 @@ The config file contains the list of topics to be monitored and the definition, 
   - expression: "lambda msg: msg.feedback.route == 'WayPoint45'"
     safety_critical: False
   execute:
-  - log:
-      message: "Resetting safety tag"
-      level: info
   - call:
       verbose: True
-      service_name: "/sentor/reset_safety_tag"
+      service_name: "/sentor/set_safety_tag"
       service_args:
       -  "req.data = True"
   - log:
@@ -88,6 +84,7 @@ The config file contains the list of topics to be monitored and the definition, 
   timeout: 0.0
   lock_exec: False
   repeat_exec: False
+  default_notifications: True
   include: True   
 
 
@@ -99,7 +96,7 @@ The config file contains the list of topics to be monitored and the definition, 
 Top-level arguments:
 - `name`: is the name of the topic to monitor
 - `signal_when`: optional, can be either 'not published' or 'published'. Respectively, it will send a warning when the topic is not published or when it is.
-- `safety_critical`: optional (default=False), tag the `signal_when` condition as 'safety critical' (or not). If it is then when it is satisfied the boolean message from the topic `/safe_operation` will be set to 'False'. Call the service `/sentor/reset_safety_tag` to reset this back to 'True'.
+- `safety_critical`: optional (default=False), tag the `signal_when` condition as 'safety critical' (or not). See section 'Safety critical conditions'.
 - `signal_lambdas`: optional, it's a list of (pythonic) lambda expressions such that when they are satisfied a warning is sent. You can use the python package `math` in your lambda expressions. See 'Child arguments of `signal_lambdas`' below.
 - `execute`: optional, a list of processes to execute if `signal_when` is satisfied, or if all lambda expressions are satisfied. They will be executed in sequence. See 'Child arguments of `execute`' below. 
 - `timeout`: optional (default=0.1), amount of time (in seconds) for which the signal has to be satisfied before sending the warning/executing processes.
@@ -110,7 +107,7 @@ Top-level arguments:
 
 Child arguments of `signal_lambdas`:
 - `expression`: the lambda expression.
-- `safety_critical`: optional (default=False), tag this lambda expression as 'safety critical' (or not). If it is then when it is satisfied the boolean message from the topic `/safe_operation` will be set to 'False'. Call the service `/sentor/reset_safety_tag` to reset this back to 'True'.
+- `safety_critical`: optional (default=False), tag this lambda expression as 'safety critical' (or not). See section 'Safety critical conditions'.
 
 Child arguments of `execute`:
 - `call`: optional, call a rosservice.
@@ -150,6 +147,11 @@ Child arguments of `log`:
 - `message`: the message that you are logging.
 - `level`: the log level (can be 'info', 'warn' or 'error').
 - `msg_args`: optional, you can supply message data from the topic you are monitoring in your logs. See the first monitor in the example config.
+
+## Safety critical conditions
+A topic monitor's signal when condition, and each of its lambda expressions, can be tagged as *safety critical*. If any safety critical condition in any topic monitor is satisfied then the boolean message from the topic `safe operation` will be set to False. 
+
+By setting the arg `auto_safety_tagging` (see `sentor.launch`) to True sentor will automatically set `safe operation` to True when all safety critical condition across all monitors are unsatisfied.  If `auto_safety_tagging` is set to `False` then the service `/sentor/set_safety_tag` must be called.
 
 ## Using sentor with this example config
 You will need the RASberry repo (<a href="https://github.com/LCAS/RASberry">get it here</a>) and all its dependencies. Also install `cowsay`. Create a file `.rasberryrc` in your home directory and put the following inside it:

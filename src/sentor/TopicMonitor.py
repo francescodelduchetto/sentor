@@ -22,7 +22,7 @@ class TopicMonitor(Thread):
 
 
     def __init__(self, topic_name, signal_when, safety_critical, signal_lambdas, 
-                 processes, lock_exec, repeat_exec, timeout, default_notifications, event_callback, safety_callback):
+                 processes, lock_exec, repeat_exec, timeout, default_notifications, event_callback):
         Thread.__init__(self)
 
         self.topic_name = topic_name
@@ -37,9 +37,9 @@ class TopicMonitor(Thread):
             self.timeout = 0.1
         self.default_notifications = default_notifications
         self.event_callback = event_callback
-        self.safety_callback = safety_callback
         self.satisfied_expressions = []
         self.sat_expressions_timer = {}
+        self.sat_expr_crit_timer = {}
         self.sat_expr_repeat_timer = {}
         self.pub_monitor = None
         self.hz_monitor = None
@@ -52,6 +52,11 @@ class TopicMonitor(Thread):
 
         if processes:
             self.executor = Executor(processes, lock_exec, event_callback)
+        
+        self.signal_when_is_safe = True
+        self.lambdas_are_safe = True
+        self.thread_is_safe = True
+        rospy.Timer(rospy.Duration(0.1), self.safety_cb)
 
         self._stop_event = Event()
         self._killed_event = Event()
@@ -70,6 +75,8 @@ class TopicMonitor(Thread):
 
         if real_topic is None:
             self.event_callback("Topic %s is not published" % self.topic_name, "warn")
+            if self.signal_when.lower() == 'not published' and self.safety_critical:
+                self.signal_when_is_safe = False
             return False
 
         if self.signal_when.lower() == 'published':
@@ -78,6 +85,9 @@ class TopicMonitor(Thread):
             self.pub_monitor = self._instantiate_pub_monitor(real_topic, self.topic_name, msg_class)
 
             self.pub_monitor.register_published_cb(self.published_cb)
+            
+            if self.safety_critical:
+                self.signal_when_is_safe = False
 
         elif self.signal_when.lower() == 'not published':
             print "Signaling 'not published' for "+ bcolors.BOLD + str(self.timeout) + " seconds" + bcolors.ENDC +" for " + bcolors.OKBLUE + self.topic_name + bcolors.ENDC +" initialized"
@@ -144,20 +154,17 @@ class TopicMonitor(Thread):
                 self.is_instantiated = True
                 
         def cb(_):
+            if self.safety_critical:
+                self.signal_when_is_safe = False
             if self.default_notifications and self.safety_critical:
                 self.event_callback("SAFETY CRITICAL: Topic %s is not published anymore" % self.topic_name, "warn")
             elif self.default_notifications:
                 self.event_callback("Topic %s is not published anymore" % self.topic_name, "warn")
             if not self.repeat_exec:
-                if self.safety_critical:
-                    self.safety_callback(False)
                 self.execute()
 
         def repeat_cb(_):
-            if self.repeat_exec:
-                if self.safety_critical:
-                    self.safety_callback(False)
-                self.execute()
+            self.execute()
 
         timer = None
         timer_repeat = None
@@ -183,6 +190,9 @@ class TopicMonitor(Thread):
 
                     if rate is not None:# and not self.is_topic_published:# and not self.is_latch:
                         self.is_topic_published = True
+                        
+                        if self.safety_critical:
+                            self.signal_when_is_safe = True
 
                         if timer is not None:
                             timer.shutdown()
@@ -214,18 +224,25 @@ class TopicMonitor(Thread):
             time.sleep(1)
 
     def lambda_satisfied_cb(self, expr, msg, safety_critical_lambda):
-        if not self._stop_event.isSet():            
+        if not self._stop_event.isSet():         
+            if safety_critical_lambda:
+                if not expr in self.sat_expr_crit_timer.keys():
+                    # self.satisfied_expressions.append(expr)
+                    def crit_cb(_):
+                        self.lambdas_are_safe = False
+                        if self.default_notifications:
+                            self.event_callback("SAFETY CRITICAL: Expression '%s' for %s seconds on topic %s satisfied" % (expr, self.timeout, self.topic_name), "warn", msg)
+                
+                    self._lock.acquire()
+                    self.sat_expr_crit_timer.update({expr: rospy.Timer(rospy.Duration.from_sec(self.timeout), crit_cb, oneshot=True)})
+                    self._lock.release()            
+            
             if not expr in self.sat_expressions_timer.keys():
                 # self.satisfied_expressions.append(expr)
                 def cb(_):
-                    if self.default_notifications and safety_critical_lambda:
-                        self.event_callback("SAFETY CRITICAL: Expression '%s' for %s seconds on topic %s satisfied" % (expr, self.timeout, self.topic_name), "warn", msg)
-                    elif self.default_notifications:
+                    if self.default_notifications and not safety_critical_lambda:
                         self.event_callback("Expression '%s' for %s seconds on topic %s satisfied" % (expr, self.timeout, self.topic_name), "warn", msg)
-                    if not self.repeat_exec:
-                        if safety_critical_lambda:
-                            self.safety_callback(False)
-                        if len(self.sat_expressions_timer.keys()) == len(self.signal_lambdas):
+                    if not self.repeat_exec and len(self.sat_expressions_timer.keys()) == len(self.signal_lambdas):
                             self.execute(msg)
                 
                 self._lock.acquire()
@@ -234,10 +251,7 @@ class TopicMonitor(Thread):
             
             if self.repeat_exec:
                 if not expr in self.sat_expr_repeat_timer.keys():
-                    
                     def repeat_cb(_):
-                        if safety_critical_lambda:
-                            self.safety_callback(False)
                         if len(self.sat_expr_repeat_timer.keys()) == len(self.signal_lambdas):
                             self.execute(msg)
                             for expr in self.sat_expr_repeat_timer.keys():
@@ -251,6 +265,15 @@ class TopicMonitor(Thread):
 
     def lambda_unsatisfied_cb(self, expr):
         if not self._stop_event.isSet():
+            if expr in self.sat_expr_crit_timer.keys():
+                self._lock.acquire()
+                self.sat_expr_crit_timer[expr].shutdown()
+                self.sat_expr_crit_timer.pop(expr)
+                self._lock.release()
+                
+            if not self.sat_expr_crit_timer:
+                self.lambdas_are_safe = True
+            
             if expr in self.sat_expressions_timer.keys():
                 self._lock.acquire()
                 self.sat_expressions_timer[expr].shutdown()
@@ -269,7 +292,7 @@ class TopicMonitor(Thread):
     def published_cb(self, msg):
         if not self._stop_event.isSet():
             if self.safety_critical:
-                self.safety_callback(False)
+                self.signal_when_is_safe = False
             if self.default_notifications and self.safety_critical:
                 self.event_callback("SAFETY CRITICAL: Topic %s is published " % (self.topic_name), "warn")
             elif self.default_notifications:
@@ -287,6 +310,13 @@ class TopicMonitor(Thread):
         if self.processes:
             rospy.sleep(0.1) # needed when using slackeros
             self.executor.execute(msg)
+            
+    def safety_cb(self, event=None):
+        
+        if self.signal_when_is_safe and self.lambdas_are_safe:
+            self.thread_is_safe = True
+        else:
+            self.thread_is_safe = False
             
     def stop_monitor(self):
         self._stop_event.set()
