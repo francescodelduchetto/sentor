@@ -100,6 +100,7 @@ Top-level arguments:
 - `signal_lambdas`: optional, it's a list of (pythonic) lambda expressions such that when they are satisfied a warning is sent. You can use the python package `math` in your lambda expressions. See 'Child arguments of `signal_lambdas`' below.
 - `execute`: optional, a list of processes to execute if `signal_when` is satisfied, or if all lambda expressions are satisfied. They will be executed in sequence. See 'Child arguments of `execute`' below. 
 - `timeout`: optional (default=0.1), amount of time (in seconds) for which the signal has to be satisfied before sending the warning/executing processes.
+- `lambdas_when_published`: optional (default=False), setting this to 'True' will ensure that lambda expressions can be satisfied only when the topic is being published. 
 - `lock_exec`: optional (default=False), lock out other threads while this one is executing its sequence of processes.
 - `repeat_exec`: optional (default=False), default behaviour is to execute processes once after conditions (`signal_when` or lambdas) have been satisfied for `timeout` seconds.  They will not execute again until a change occurs (i.e. conditions become unsatisfied, then satisfied again). If `repeat_exec` is set to 'True' then processes will be executed every `timeout` seconds whilst the conditions are satisfied.
 - `default_notifications`:  optional (default=True), setting this to 'False' will turn off the default warnings given when conditions (`signal_when` or lambdas) are satisfied.
@@ -149,9 +150,9 @@ Child arguments of `log`:
 - `msg_args`: optional, you can supply message data from the topic you are monitoring in your logs. See the first monitor in the example config.
 
 ## Safety critical conditions
-A topic monitor's signal when condition, and each of its lambda expressions, can be tagged as *safety critical*. If any safety critical condition in any topic monitor is satisfied then the boolean message from the topic `safe operation` will be set to False. 
+A topic monitor's `signal_when` condition, and each of its lambda expressions, can be tagged as *safety critical*. If any safety critical condition in any topic monitor is satisfied then the boolean message from the topic `safe operation` will be set to 'False'. 
 
-By setting the arg `auto_safety_tagging` (see `sentor.launch`) to True sentor will automatically set `safe operation` to True when all safety critical condition across all monitors are unsatisfied.  If `auto_safety_tagging` is set to `False` then the service `/sentor/set_safety_tag` must be called.
+By setting the arg `auto_safety_tagging` (see `sentor.launch`) to 'True' sentor will automatically set `safe operation` to True when all safety critical condition across all monitors are unsatisfied.  If `auto_safety_tagging` is set to 'False' then the service `/sentor/set_safety_tag` must be called.
 
 ## Using sentor with this example config
 You will need the RASberry repo (<a href="https://github.com/LCAS/RASberry">get it here</a>) and all its dependencies. Also install `cowsay`. Create a file `.rasberryrc` in your home directory and put the following inside it:
