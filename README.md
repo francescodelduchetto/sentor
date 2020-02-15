@@ -41,6 +41,7 @@ The config file contains the list of topics to be monitored and the definition, 
       - "cowsay"
       - "moo"
   timeout: 0.0
+  lambdas_when_published: False
   lock_exec: False
   repeat_exec: False
   default_notifications: True
@@ -82,6 +83,7 @@ The config file contains the list of topics to be monitored and the definition, 
       -  "msg.header.frame_id = '/map'"
       -  "msg.pose.pose.orientation.w = 1.0"
   timeout: 0.0
+  lambdas_when_published: False
   lock_exec: False
   repeat_exec: False
   default_notifications: True
