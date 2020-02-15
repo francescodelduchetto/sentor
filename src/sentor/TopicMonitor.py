@@ -266,8 +266,10 @@ class TopicMonitor(Thread):
                             if len(self.sat_expr_repeat_timer.keys()) == len(self.signal_lambdas):
                                 self.execute(msg)
                                 for expr in self.sat_expr_repeat_timer.keys():
+                                    self._lock.acquire()
                                     self.sat_expr_repeat_timer[expr].shutdown()
                                     self.sat_expr_repeat_timer.pop(expr)
+                                    self._lock.release()
                         
                     self._lock.acquire()
                     self.sat_expr_repeat_timer.update({expr: rospy.Timer(rospy.Duration.from_sec(self.timeout), repeat_cb, oneshot=True)})
@@ -278,8 +280,10 @@ class TopicMonitor(Thread):
             if self.lambdas_when_published and not self.is_topic_published:
                 process_lambda = False
                 for expr in sat_expr_timer.keys():
+                    self._lock.acquire()
                     sat_expr_timer[expr].shutdown()
                     sat_expr_timer.pop(expr)
+                    self._lock.release()
             else:
                 process_lambda = True
             return process_lambda, sat_expr_timer
