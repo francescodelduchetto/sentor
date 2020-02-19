@@ -232,7 +232,6 @@ class TopicMonitor(Thread):
         if not self._stop_event.isSet():         
             if safety_critical_lambda:
                 if not expr in self.sat_expr_crit_timer.keys():
-                    # self.satisfied_expressions.append(expr)
                     def crit_cb(_):
                         process_lambda, self.sat_expr_crit_timer = ProcessLambda(self.sat_expr_crit_timer)
                         if process_lambda:
@@ -245,7 +244,6 @@ class TopicMonitor(Thread):
                     self._lock.release()            
             
             if not expr in self.sat_expressions_timer.keys():
-                # self.satisfied_expressions.append(expr)
                 def cb(_):
                     process_lambda, self.sat_expressions_timer = ProcessLambda(self.sat_expressions_timer)
                     if process_lambda:
@@ -266,53 +264,44 @@ class TopicMonitor(Thread):
                             if len(self.sat_expr_repeat_timer.keys()) == len(self.signal_lambdas):
                                 self.execute(msg)
                                 for expr in self.sat_expr_repeat_timer.keys():
-                                    self._lock.acquire()
-                                    self.sat_expr_repeat_timer[expr].shutdown()
-                                    self.sat_expr_repeat_timer.pop(expr)
-                                    self._lock.release()
+                                    self.sat_expr_repeat_timer = self.kill_timer(self.sat_expr_repeat_timer, expr) 
                         
                     self._lock.acquire()
                     self.sat_expr_repeat_timer.update({expr: rospy.Timer(rospy.Duration.from_sec(self.timeout), repeat_cb, oneshot=True)})
                     self._lock.release()  
-            #print "sat", msg
                     
-        def ProcessLambda(sat_expr_timer):
+        def ProcessLambda(timer_dict):
             if self.lambdas_when_published and not self.is_topic_published:
                 process_lambda = False
-                for expr in sat_expr_timer.keys():
-                    self._lock.acquire()
-                    sat_expr_timer[expr].shutdown()
-                    sat_expr_timer.pop(expr)
-                    self._lock.release()
+                for expr in timer_dict.keys():
+                    timer_dict = self.kill_timer(timer_dict, expr) 
             else:
                 process_lambda = True
-            return process_lambda, sat_expr_timer
+            return process_lambda, timer_dict
 
     def lambda_unsatisfied_cb(self, expr):
         if not self._stop_event.isSet():
             if expr in self.sat_expr_crit_timer.keys():
-                self._lock.acquire()
-                self.sat_expr_crit_timer[expr].shutdown()
-                self.sat_expr_crit_timer.pop(expr)
-                self._lock.release()
+                self.sat_expr_crit_timer = self.kill_timer(self.sat_expr_crit_timer, expr) 
+            
+            if expr in self.sat_expressions_timer.keys():
+                self.sat_expressions_timer = self.kill_timer(self.sat_expressions_timer, expr) 
+                
+            if expr in self.sat_expr_repeat_timer.keys():
+                self.sat_expr_repeat_timer = self.kill_timer(self.sat_expr_repeat_timer, expr) 
                 
             if not self.sat_expr_crit_timer:
                 self.lambdas_are_safe = True
-            
-            if expr in self.sat_expressions_timer.keys():
-                self._lock.acquire()
-                self.sat_expressions_timer[expr].shutdown()
-                self.sat_expressions_timer.pop(expr)
-                self._lock.release()
-                
-            if expr in self.sat_expr_repeat_timer.keys():
-                self._lock.acquire()
-                self.sat_expr_repeat_timer[expr].shutdown()
-                self.sat_expr_repeat_timer.pop(expr)
-                self._lock.release()
             # if not msg in self.unsatisfied_expressions and msg in self.satisfied_expressions:
             #     self.unsatisfied_expressions.append(msg)
             #print "unsat", msg
+                
+    def kill_timer(self, timer_dict, expr):
+        self._lock.acquire()
+        timer_dict[expr].shutdown()
+        timer_dict.pop(expr)
+        self._lock.release()
+        return timer_dict
 
     def published_cb(self, msg):
         if not self._stop_event.isSet():

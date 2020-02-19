@@ -102,7 +102,7 @@ Top-level arguments:
 - `signal_lambdas`: optional, it's a list of (pythonic) lambda expressions such that when they are satisfied a warning is sent. You can use the python package `math` in your lambda expressions. See 'Child arguments of `signal_lambdas`' below.
 - `execute`: optional, a list of processes to execute if `signal_when` is satisfied, or if all lambda expressions are satisfied. They will be executed in sequence. See 'Child arguments of `execute`' below. 
 - `timeout`: optional (default=0.1), amount of time (in seconds) for which the signal has to be satisfied before sending the warning/executing processes.
-- `lambdas_when_published`: optional (default=False), setting this to 'True' will ensure that lambda expressions can be satisfied only when the topic is being published. 
+- `lambdas_when_published`: optional (default=False), setting this to 'True' will ensure that lambda expressions can be satisfied (for `timeout` seconds) only if the topic is currently being published. 
 - `lock_exec`: optional (default=False), lock out other threads while this one is executing its sequence of processes.
 - `repeat_exec`: optional (default=False), default behaviour is to execute processes once after conditions (`signal_when` or lambdas) have been satisfied for `timeout` seconds.  They will not execute again until a change occurs (i.e. conditions become unsatisfied, then satisfied again). If `repeat_exec` is set to 'True' then processes will be executed every `timeout` seconds whilst the conditions are satisfied.
 - `default_notifications`:  optional (default=True), setting this to 'False' will turn off the default warnings given when conditions (`signal_when` or lambdas) are satisfied.
