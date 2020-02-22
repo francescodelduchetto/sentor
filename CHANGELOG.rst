@@ -2,8 +2,8 @@
 Changelog for package sentor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.0.4 (2020-02-22)
+------------------
 * Merge pull request `#8 <https://github.com/LCAS/sentor/issues/8>`_ from adambinch/sentor_devel
   New top-level arg `lambdas_when_published` that ensures that lambda e…
 * Simplified code a little. Small change to the readme.
