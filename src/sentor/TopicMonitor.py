@@ -2,6 +2,7 @@ from sentor.ROSTopicHz import ROSTopicHz
 from sentor.ROSTopicFilter import ROSTopicFilter
 from sentor.ROSTopicPub import ROSTopicPub
 from sentor.Executor import Executor
+from sentor.TopicMapper import TopicMapper
 
 from threading import Thread, Event, Lock
 import rostopic
@@ -21,7 +22,7 @@ class bcolors:
 class TopicMonitor(Thread):
 
 
-    def __init__(self, topic_name, signal_when, safety_critical, signal_lambdas, processes, 
+    def __init__(self, topic_name, signal_when, safety_critical, signal_lambdas, processes, _map,
                  lock_exec, repeat_exec, timeout, lambdas_when_published, default_notifications,
                  event_callback):
         Thread.__init__(self)
@@ -31,6 +32,7 @@ class TopicMonitor(Thread):
         self.safety_critical = safety_critical
         self.signal_lambdas = signal_lambdas
         self.processes = processes
+        self.map = _map
         self.repeat_exec = repeat_exec
         if timeout > 0:
             self.timeout = timeout
@@ -121,6 +123,10 @@ class TopicMonitor(Thread):
 
                     self.lambda_monitor_list.append(lambda_monitor)
             print ""
+            
+        if self.map is not None:
+            print "Mapping topic arg "+ bcolors.OKGREEN + self.map["topic_arg"] + bcolors.ENDC +" from topic "+ bcolors.OKBLUE + self.topic_name + bcolors.ENDC + '\n'
+            self.topic_mapper = TopicMapper(self.map, real_topic, msg_class) 
 
         self.is_instantiated = True
 
@@ -175,14 +181,14 @@ class TopicMonitor(Thread):
         timer_repeat = None
         while not self._killed_event.isSet():
             while not self._stop_event.isSet():
+                
                 # check it is still published (None if not)
                 if self.hz_monitor is not None:
                     rate = self.hz_monitor.get_hz()
-    
+                    
                     # # if the publishing rate is less than 1Hz we assume it's a latch message
                     # if rate is not None:
                     #     self.is_latch = (rate < 0.5)
-    
     
                     if rate is None and self.is_topic_published: #and not self.is_latch:
                         self.is_topic_published = False

@@ -2,9 +2,27 @@ cmake_minimum_required(VERSION 2.8.3)
 project(sentor)
 find_package(catkin REQUIRED)
 
+find_package(catkin REQUIRED COMPONENTS
+  message_generation
+  std_msgs
+)
+
 catkin_python_setup()
 
-catkin_package()
+add_message_files(
+  FILES
+  Map.msg
+  MapArray.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
+
+catkin_package(
+  CATKIN_DEPENDS message_runtime
+)
 
 install(PROGRAMS
   scripts/sentor_node.py
