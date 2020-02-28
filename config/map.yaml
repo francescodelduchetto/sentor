@@ -11,4 +11,13 @@
     topic_arg: "msg.lines_accepted.data"
     limits: [-2.0, 21.0, -8.0, 8.0]
     resolution: 1.0
+  include: True
+
+
+- name : "/topological_navigation/feedback"
+  map:
+    topic_arg: "msg.feedback.route == 'WayPoint1'"
+    limits: [-2.0, 21.0, -8.0, 8.0]
+    resolution: 1.0
   include: False
+

@@ -125,7 +125,7 @@ class TopicMonitor(Thread):
             print ""
             
         if self.map is not None:
-            print "Mapping topic arg "+ bcolors.OKGREEN + self.map["topic_arg"] + bcolors.ENDC +" from topic "+ bcolors.OKBLUE + self.topic_name + bcolors.ENDC + '\n'
+            print "Mapping topic arg "+ bcolors.OKGREEN + self.map["topic_arg"] + bcolors.ENDC +" on topic "+ bcolors.OKBLUE + self.topic_name + bcolors.ENDC + '\n'
             self.topic_mapper = TopicMapper(self.map, real_topic, msg_class) 
 
         self.is_instantiated = True

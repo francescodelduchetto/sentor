@@ -7,6 +7,7 @@ Created on Tue Feb 25 08:55:41 2020
 ##########################################################################################
 from __future__ import division
 import rospy, numpy as np, tf
+import math
 
 
 class TopicMapper(object):
@@ -15,15 +16,16 @@ class TopicMapper(object):
     def __init__(self, config, topic, msg_class):
         
         self.config = config
+        self.topic = topic
         
         self.x_bins = np.arange(config["limits"][0], config["limits"][1], config["resolution"]) 
         self.y_bins = np.arange(config["limits"][2], config["limits"][3], config["resolution"])
         
-        self.nx = self.x_bins.shape[0] + 1
-        self.ny = self.y_bins.shape[0] + 1
+        self.n_rows = self.x_bins.shape[0] + 1
+        self.n_cols = self.y_bins.shape[0] + 1
         
-        self.obs = np.zeros((self.nx, self.ny))
-        self.map = np.zeros((self.nx, self.ny))  
+        self.obs = np.zeros((self.n_rows, self.n_cols))
+        self.map = np.zeros((self.n_rows, self.n_cols))  
         self.map[:] = np.nan
         
         self.tf_listener = tf.TransformListener()
@@ -36,21 +38,18 @@ class TopicMapper(object):
         try:
             x, y = self.get_transform()
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-            rospy.logwarn("Failed to get transform between map and baselink")
+            rospy.logwarn("Failed to get transform between the map and baselink frames")
             return
         
         if x >= self.config["limits"][0] and x <= self.config["limits"][1] \
         and y >= self.config["limits"][2] and y <= self.config["limits"][3]:
             
-            self.topic_arg = eval(self.config["topic_arg"])
-            valid_arg = self.is_valid()
+            valid_arg = self.process_topic_arg(msg)
             
             if valid_arg:
                 self.index_x = np.digitize(x, self.x_bins)
                 self.index_y = np.digitize(y, self.y_bins)     
                 self.update_map()
-            else:
-                rospy.logwarn("Topic arg of {} cannot be processed".format(type(self.topic_arg)))
 
         
     def get_transform(self):
@@ -62,19 +61,22 @@ class TopicMapper(object):
         return trans[0], trans[1]
         
         
-    def is_valid(self):
+    def process_topic_arg(self, msg):
         
+        try:
+            self.topic_arg = eval(self.config["topic_arg"])
+        except Exception as e:
+            rospy.logwarn("Exception while evaluating {}: {}".format(self.config["topic_arg"], e))
+            return False
+            
         valid_arg = True
-        if type(self.topic_arg) is float:
-            pass
-        elif type(self.topic_arg) is int:
-            pass
-        elif type(self.topic_arg) is bool:    
+        if type(self.topic_arg) is bool:    
             if self.topic_arg:
                 self.topic_arg = 1
             else:
-                self.topic_arg = 0           
-        else:
+                self.topic_arg = 0
+        elif type(self.topic_arg) is not float and type(self.topic_arg) is not int:
+            rospy.logwarn("Topic arg of {} on topic '{}' cannot be processed".format(type(self.topic_arg), self.topic))
             valid_arg = False
         
         return valid_arg

@@ -74,8 +74,8 @@ def map_pub_callback(event=None):
             map_msg.topic_name = monitor.topic_name
             map_msg.topic_arg = monitor.map["topic_arg"]
             map_msg.resolution = monitor.map["resolution"]
-            map_msg.size_x = monitor.topic_mapper.nx
-            map_msg.size_y = monitor.topic_mapper.ny
+            map_msg.n_rows = monitor.topic_mapper.n_rows
+            map_msg.n_cols = monitor.topic_mapper.n_cols
             map_msg.data = topic_map
         
             map_msgs.maps.append(map_msg)
