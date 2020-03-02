@@ -131,14 +131,16 @@ class TopicMapper(object):
             
     def plt_cb(self, event=None):
         
-        masked_map = np.ma.array(self.map, mask=np.isnan(self.map))
+        if not self._stop_event.isSet(): 
         
-        plt.pause(0.1)
-        plt.figure(self.fig_name + " " + self.map_id); plt.clf()
-        plt.imshow(masked_map.T, origin="lower", extent=self.config["limits"])
-        plt.colorbar()
-        plt.gca().set_aspect("equal", adjustable="box")
-        plt.tight_layout()
+            masked_map = np.ma.array(self.map, mask=np.isnan(self.map))
+            
+            plt.pause(0.1)
+            plt.figure(self.fig_name + " " + self.map_id); plt.clf()
+            plt.imshow(masked_map.T, origin="lower", extent=self.config["limits"])
+            plt.colorbar()
+            plt.gca().set_aspect("equal", adjustable="box")
+            plt.tight_layout()
         
             
     def stop_mapping(self):
