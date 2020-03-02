@@ -4,7 +4,7 @@
     limits: [-2.0, 21.0, -8.0, 8.0]
     resolution: 1.0
     plt: True
-    plt_rate: 0.5
+    plt_rate: 1.0
   include: False
 
 
@@ -14,14 +14,6 @@
     limits: [-2.0, 21.0, -8.0, 8.0]
     resolution: 1.0
     plt: True
-    plt_rate: 0.5
+    plt_rate: 1.0
   include: True
-
-
-- name : "/topological_navigation/feedback"
-  map:
-    topic_arg: "msg.feedback.route == 'WayPoint1'"
-    limits: [-2.0, 21.0, -8.0, 8.0]
-    resolution: 1.0
-  include: False
 

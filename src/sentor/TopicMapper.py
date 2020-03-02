@@ -45,7 +45,7 @@ class TopicMapper(object):
             gen_plts = config["plt"] 
 
         if gen_plts:
-            plt_rate = 0.5
+            plt_rate = 1.0
             if "plt_rate" in config.keys():
                 plt_rate = config["plt_rate"]     
             
