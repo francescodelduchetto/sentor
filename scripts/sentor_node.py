@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 from __future__ import division
-import numpy as np
 from sentor.TopicMonitor import TopicMonitor
 from sentor.SafetyMonitor import SafetyMonitor
+from sentor.TopicMapPublisher import TopicMapPublisher
 from std_msgs.msg import String
-from sentor.msg import Map, MapArray
-from std_srvs.srv import Empty
+from std_srvs.srv import Empty, EmptyResponse
 import pprint
 import signal
 import rospy
@@ -35,20 +34,48 @@ def __signal_handler(signum, frame):
     join_monitors()
     print "stopped."
     os._exit(signal.SIGTERM)
+    
 
 def stop_monitoring(_):
     for topic_monitor in topic_monitors:
         topic_monitor.stop_monitor()
+        if topic_monitor.map is not None:
+            topic_monitor.topic_mapper.stop_mapping()
+            
+    safety_monitor.stop_monitoring()
+    
+    if topic_mapping:
+        topic_map_publisher.stop_publishing()
 
     rospy.logwarn("sentor_node stopped monitoring")
-    return
+    ans = EmptyResponse()
+    return ans
+    
 
 def start_monitoring(_):
     for topic_monitor in topic_monitors:
         topic_monitor.start_monitor()
+        if topic_monitor.map is not None:
+            topic_monitor.topic_mapper.start_mapping()
+            
+    safety_monitor.start_monitoring()
+    
+    if topic_mapping:
+        topic_map_publisher.start_publishing()
 
     rospy.logwarn("sentor_node started monitoring")
-    return
+    ans = EmptyResponse()
+    return ans
+    
+    
+def write_maps(_):
+    for topic_monitor in topic_monitors:
+        if topic_monitor.map is not None:
+            topic_monitor.topic_mapper.write_map()
+        
+    ans = EmptyResponse()
+    return ans
+    
 
 def event_callback(string, type, msg=""):
     if type == "info":
@@ -60,27 +87,7 @@ def event_callback(string, type, msg=""):
 
     if event_pub is not None:
         event_pub.publish(String("%s: %s" % (type, string)))
-        
-def map_pub_callback(event=None):
     
-    map_msgs = MapArray()
-    for monitor in topic_monitors:
-        if monitor.map is not None:
-            topic_map = np.ndarray.tolist(np.ravel(monitor.topic_mapper.map))
-            
-            map_msg = Map()
-            map_msg.header.stamp = rospy.Time.now()
-            map_msg.header.frame_id = "/map"
-            map_msg.topic_name = monitor.topic_name
-            map_msg.topic_arg = monitor.map["topic_arg"]
-            map_msg.resolution = monitor.map["resolution"]
-            map_msg.n_rows = monitor.topic_mapper.n_rows
-            map_msg.n_cols = monitor.topic_mapper.n_cols
-            map_msg.data = topic_map
-        
-            map_msgs.maps.append(map_msg)
-    maps_pub.publish(map_msgs)
-            
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, __signal_handler)
@@ -136,7 +143,6 @@ if __name__ == "__main__":
             processes = topic['execute']
         if 'map' in topic.keys():
             _map = topic['map']
-            topic_mapping = True
         if 'lock_exec' in topic.keys():
             lock_exec = topic['lock_exec']
         if 'repeat_exec' in topic.keys():
@@ -149,12 +155,16 @@ if __name__ == "__main__":
             default_notifications = topic['default_notifications']
         if 'include' in topic.keys():
             include = topic['include']
+            
+        if include and _map is not None:
+            topic_mapping = True
 
         if include:
             topic_monitor = TopicMonitor(topic_name, signal_when, safety_critical, 
                                          signal_lambdas, processes, _map, lock_exec, 
                                          repeat_exec, timeout, lambdas_when_published, 
                                          default_notifications, event_callback)
+
             topic_monitors.append(topic_monitor)
             safety_monitor.register_monitors(topic_monitor)
             
@@ -164,9 +174,10 @@ if __name__ == "__main__":
     for topic_monitor in topic_monitors:
         topic_monitor.start()
     
-    if topic_mapping:    
+    if topic_mapping:
+        rospy.Service('/sentor/write_maps', Empty, write_maps)   
         map_pub_rate = rospy.get_param("~map_pub_rate", "") 
-        maps_pub = rospy.Publisher('/sentor/maps', MapArray, queue_size=10)
-        rospy.Timer(rospy.Duration(1.0/map_pub_rate), map_pub_callback)
+        topic_map_publisher = TopicMapPublisher(topic_monitors, map_pub_rate)
 
     rospy.spin()
+##########################################################################################

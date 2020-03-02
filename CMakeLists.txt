@@ -11,8 +11,8 @@ catkin_python_setup()
 
 add_message_files(
   FILES
-  Map.msg
-  MapArray.msg
+  TopicMap.msg
+  TopicMapArray.msg
 )
 
 generate_messages(
