@@ -37,11 +37,13 @@ class TopicMapPublisher(object):
                     map_msg.topic_name = monitor.topic_name
                     map_msg.topic_arg = monitor.map["topic_arg"]
                     map_msg.resolution = monitor.map["resolution"]
-                    map_msg.size_x = monitor.topic_mapper.nx
-                    map_msg.size_y = monitor.topic_mapper.ny
+                    map_msg.shape = monitor.topic_mapper.shape
+                    map_msg.position = monitor.topic_mapper.position
+                    map_msg.index = monitor.topic_mapper.index
+                    map_msg.arg_at_position = monitor.topic_mapper.arg_at_position
         
                     topic_map = ndarray.tolist(ravel(monitor.topic_mapper.map))
-                    map_msg.data = topic_map
+                    map_msg.topic_map = topic_map
                 
                     map_msgs.topic_maps.append(map_msg)
             self.maps_pub.publish(map_msgs)

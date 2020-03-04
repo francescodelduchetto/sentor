@@ -169,15 +169,20 @@ if __name__ == "__main__":
             safety_monitor.register_monitors(topic_monitor)
             
     time.sleep(1)
+    
+    if topic_mapping:
+        hd = os.path.expanduser("~")
+        save_dir = os.path.join(hd, ".sentor_maps")     
+        if not os.path.exists(save_dir):
+            os.mkdir(save_dir)        
+        
+        rospy.Service("/sentor/write_maps", Empty, write_maps)   
+        map_pub_rate = rospy.get_param("~map_pub_rate", "") 
+        topic_map_publisher = TopicMapPublisher(topic_monitors, map_pub_rate)
 
     # start monitoring
     for topic_monitor in topic_monitors:
         topic_monitor.start()
-    
-    if topic_mapping:
-        rospy.Service('/sentor/write_maps', Empty, write_maps)   
-        map_pub_rate = rospy.get_param("~map_pub_rate", "") 
-        topic_map_publisher = TopicMapPublisher(topic_monitors, map_pub_rate)
 
     rospy.spin()
 ##########################################################################################

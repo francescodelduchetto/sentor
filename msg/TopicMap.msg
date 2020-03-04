@@ -2,6 +2,8 @@ std_msgs/Header header
 string topic_name
 string topic_arg
 float32 resolution
-float32 size_x
-float32 size_y
-float32[] data
+float32[] shape
+float32[] position
+float32[] index
+float32 arg_at_position
+float32[] topic_map

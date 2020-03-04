@@ -7,7 +7,7 @@ Created on Tue Feb 25 08:55:41 2020
 ##########################################################################################
 from __future__ import division
 import rospy, numpy as np, tf, math
-import rospkg, uuid, os, pickle, yaml
+import uuid, os, pickle, yaml
 import matplotlib.pyplot as plt
 from threading import Event
 
@@ -29,14 +29,18 @@ class TopicMapper(object):
         self.obs = np.zeros((self.nx, self.ny))
         self.map = np.zeros((self.nx, self.ny))  
         self.map[:] = np.nan
-
-        self.tf_listener = tf.TransformListener()
         
-        package_dir = rospkg.RosPack().get_path("sentor")
-        self.map_id = str(uuid.uuid4())
-        self.save_dir = package_dir + "/topic_maps/" + self.map_id 
+        self.shape = [self.nx, self.ny]
+        self.position = [np.nan, np.nan]
+        self.index = [np.nan, np.nan]
+        self.arg_at_position = np.nan
+
+        self.tf_listener = tf.TransformListener()          
         
         self._stop_event = Event()
+        
+        home_dir = os.path.expanduser("~")        
+        self.base_dir = os.path.join(home_dir, ".sentor_maps")  
         
         rospy.Subscriber(topic, msg_class, self.topic_cb)
         
@@ -49,7 +53,7 @@ class TopicMapper(object):
             if "plt_rate" in config.keys():
                 plt_rate = config["plt_rate"]     
             
-            self.fig_name = config["topic"] + " " + config["topic_arg"]
+            self.fig_id = config["topic"] + " " + config["topic_arg"] + " " + str(uuid.uuid4())
             rospy.Timer(rospy.Duration(1.0/plt_rate), self.plt_cb)
 
 
@@ -59,7 +63,7 @@ class TopicMapper(object):
             
             try:
                 x, y = self.get_transform()
-            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            except: 
                 rospy.logwarn("Failed to get transform between the map and baselink frames")
                 return
             
@@ -115,18 +119,10 @@ class TopicMapper(object):
         
         wm = (1/N) * ((m * (N-1)) + self.topic_arg)
         
+        self.position = [x, y]
+        self.index = [ix, iy]
+        self.arg_at_position = wm
         self.map[ix, iy] = wm
-        
-        
-    def write_map(self):
-        
-        os.mkdir(self.save_dir)
-        
-        pickle.dump(self.map, open(self.save_dir + "/topic_map.pkl", "wb"))
-        rospy.loginfo("saving topic map '{}'".format(self.save_dir + "/topic_map.pkl"))
-        
-        with open(self.save_dir + "/config.yaml",'w') as f:
-            yaml.dump(self.config, f, default_flow_style=False)
             
             
     def plt_cb(self, event=None):
@@ -136,11 +132,23 @@ class TopicMapper(object):
             masked_map = np.ma.array(self.map, mask=np.isnan(self.map))
             
             plt.pause(0.1)
-            plt.figure(self.fig_name + " " + self.map_id); plt.clf()
+            plt.figure(self.fig_id); plt.clf()
             plt.imshow(masked_map.T, origin="lower", extent=self.config["limits"])
             plt.colorbar()
             plt.gca().set_aspect("equal", adjustable="box")
             plt.tight_layout()
+            
+            
+    def write_map(self):
+        
+        save_dir = os.path.join(self.base_dir, str(uuid.uuid4()))
+        os.mkdir(save_dir)
+        
+        pickle.dump(self.map, open(save_dir + "/topic_map.pkl", "wb"))
+        rospy.loginfo("saving topic map '{}'".format(save_dir + "/topic_map.pkl"))
+        
+        with open(save_dir + "/config.yaml",'w') as f:
+            yaml.dump(self.config, f, default_flow_style=False)
         
             
     def stop_mapping(self):

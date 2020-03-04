@@ -12,7 +12,7 @@
   map:
     topic_arg: "msg.lines_accepted.data == False"
     limits: [3.0, 36.0, -8.0, 8.0]
-    resolution: 0.5
+    resolution: 1.5
     plt: True
     plt_rate: 1.0
   include: True
