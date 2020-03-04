@@ -19,12 +19,12 @@ class TopicMapper(object):
         
         self.config = config
         self.config["topic"] = topic
+
+        self.nx = int(np.floor((config["limits"][1] - config["limits"][0]) / config["resolution"]))
+        self.ny = int(np.floor((config["limits"][3] - config["limits"][2]) / config["resolution"]))
         
-        self.x_bins = np.arange(config["limits"][0], config["limits"][1], config["resolution"]) 
-        self.y_bins = np.arange(config["limits"][2], config["limits"][3], config["resolution"])
-        
-        self.nx = self.x_bins.shape[0] + 1
-        self.ny = self.y_bins.shape[0] + 1
+        self.x_bins = np.linspace(config["limits"][0], config["limits"][1], self.nx)
+        self.y_bins = np.linspace(config["limits"][2], config["limits"][3], self.ny)
         
         self.obs = np.zeros((self.nx, self.ny))
         self.map = np.zeros((self.nx, self.ny))  

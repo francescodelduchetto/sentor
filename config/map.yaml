@@ -11,8 +11,8 @@
 - name : "/row_detector/health_monitor"
   map:
     topic_arg: "msg.lines_accepted.data == False"
-    limits: [-2.0, 21.0, -8.0, 8.0]
-    resolution: 1.0
+    limits: [3.0, 36.0, -8.0, 8.0]
+    resolution: 0.5
     plt: True
     plt_rate: 1.0
   include: True
