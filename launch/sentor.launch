@@ -6,12 +6,16 @@
   <arg name="auto_safety_tagging" default="false"/>
   <arg name="safety_pub_rate" default="10.0"/>
   <arg name="map_pub_rate" default="1.0"/>
+  <arg name="plt" default="false"/>
+  <arg name="plt_rate" default="1.0"/>
 
   <node pkg="sentor" type="sentor_node.py" name="sentor" output="screen">
     <param name="~config_file" value="$(arg config_file)" />
     <param name="~auto_safety_tagging" value="$(arg auto_safety_tagging)" />
     <param name="~safety_pub_rate" value="$(arg safety_pub_rate)" />
     <param name="~map_pub_rate" value="$(arg map_pub_rate)" />
+    <param name="~plt" value="$(arg plt)" />
+    <param name="~plt_rate" value="$(arg plt_rate)" />
   </node>	
 
 </launch>

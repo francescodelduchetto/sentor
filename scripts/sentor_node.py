@@ -2,7 +2,7 @@
 from __future__ import division
 from sentor.TopicMonitor import TopicMonitor
 from sentor.SafetyMonitor import SafetyMonitor
-from sentor.TopicMapPublisher import TopicMapPublisher
+from sentor.TopicMapMonitor import TopicMapServer
 from std_msgs.msg import String
 from std_srvs.srv import Empty, EmptyResponse
 import pprint
@@ -45,7 +45,7 @@ def stop_monitoring(_):
     safety_monitor.stop_monitoring()
     
     if topic_mapping:
-        topic_map_publisher.stop_publishing()
+        topic_map_server.stop_monitoring()
 
     rospy.logwarn("sentor_node stopped monitoring")
     ans = EmptyResponse()
@@ -61,18 +61,9 @@ def start_monitoring(_):
     safety_monitor.start_monitoring()
     
     if topic_mapping:
-        topic_map_publisher.start_publishing()
+        topic_map_server.start_monitoring()
 
     rospy.logwarn("sentor_node started monitoring")
-    ans = EmptyResponse()
-    return ans
-    
-    
-def write_maps(_):
-    for topic_monitor in topic_monitors:
-        if topic_monitor.map is not None:
-            topic_monitor.topic_mapper.write_map()
-        
     ans = EmptyResponse()
     return ans
     
@@ -171,14 +162,10 @@ if __name__ == "__main__":
     time.sleep(1)
     
     if topic_mapping:
-        hd = os.path.expanduser("~")
-        save_dir = os.path.join(hd, ".sentor_maps")     
-        if not os.path.exists(save_dir):
-            os.mkdir(save_dir)        
-        
-        rospy.Service("/sentor/write_maps", Empty, write_maps)   
         map_pub_rate = rospy.get_param("~map_pub_rate", "") 
-        topic_map_publisher = TopicMapPublisher(topic_monitors, map_pub_rate)
+        plt = rospy.get_param("~plt", "") 
+        plt_rate = rospy.get_param("~plt_rate", "") 
+        topic_map_server = TopicMapServer(topic_monitors, map_pub_rate, plt, plt_rate)
 
     # start monitoring
     for topic_monitor in topic_monitors:

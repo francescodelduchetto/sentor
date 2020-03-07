@@ -7,8 +7,6 @@ Created on Tue Feb 25 08:55:41 2020
 ##########################################################################################
 from __future__ import division
 import rospy, numpy as np, tf, math
-import uuid, os, pickle, yaml
-import matplotlib.pyplot as plt
 from threading import Event
 
 
@@ -22,41 +20,31 @@ class TopicMapper(object):
 
         self.nx = int(np.floor((config["limits"][1] - config["limits"][0]) / config["resolution"]))
         self.ny = int(np.floor((config["limits"][3] - config["limits"][2]) / config["resolution"]))
+        self.shape = [self.nx, self.ny]
+        
+        self.init_map()
         
         self.x_bins = np.linspace(config["limits"][0], config["limits"][1], self.nx)
         self.y_bins = np.linspace(config["limits"][2], config["limits"][3], self.ny)
-        
-        self.obs = np.zeros((self.nx, self.ny))
-        self.map = np.zeros((self.nx, self.ny))  
-        self.map[:] = np.nan
-        
-        self.shape = [self.nx, self.ny]
-        self.position = [np.nan, np.nan]
-        self.index = [np.nan, np.nan]
-        self.arg_at_position = np.nan
 
         self.tf_listener = tf.TransformListener()          
         
         self._stop_event = Event()
         
-        home_dir = os.path.expanduser("~")        
-        self.base_dir = os.path.join(home_dir, ".sentor_maps")  
-        
         rospy.Subscriber(topic, msg_class, self.topic_cb)
         
-        gen_plts = False
-        if "plt" in config.keys():
-            gen_plts = config["plt"] 
-
-        if gen_plts:
-            plt_rate = 1.0
-            if "plt_rate" in config.keys():
-                plt_rate = config["plt_rate"]     
-            
-            self.fig_id = config["topic"] + " " + config["topic_arg"] + " " + str(uuid.uuid4())
-            rospy.Timer(rospy.Duration(1.0/plt_rate), self.plt_cb)
-
-
+        
+    def init_map(self):
+        
+        self.obs = np.zeros((self.nx, self.ny))
+        self.map = np.zeros((self.nx, self.ny))  
+        self.map[:] = np.nan
+        
+        self.position = [np.nan, np.nan]
+        self.index = [np.nan, np.nan]
+        self.arg_at_position = np.nan
+        
+ 
     def topic_cb(self, msg):
         
         if not self._stop_event.isSet():    
@@ -114,43 +102,30 @@ class TopicMapper(object):
         self.obs[ix, iy] += 1        
         N = self.obs[ix, iy]
         
-        m = self.map[ix, iy]
-        if np.isnan(m): m=0
-        
-        wm = (1/N) * ((m * (N-1)) + self.topic_arg)
-        
+        z0 = self.map[ix, iy]
+        if np.isnan(z0): z0=0
+            
+        z = self.compute_stat(N, z0)
+
+        self.map[ix, iy] = z        
         self.position = [x, y]
         self.index = [ix, iy]
-        self.arg_at_position = wm
-        self.map[ix, iy] = wm
-            
-            
-    def plt_cb(self, event=None):
+        self.arg_at_position = z
         
-        if not self._stop_event.isSet(): 
         
-            masked_map = np.ma.array(self.map, mask=np.isnan(self.map))
+    def compute_stat(self, N, z0):
+        
+        if self.config["stat"] == "mean":       
             
-            plt.pause(0.1)
-            plt.figure(self.fig_id); plt.clf()
-            plt.imshow(masked_map.T, origin="lower", extent=self.config["limits"])
-            plt.colorbar()
-            plt.gca().set_aspect("equal", adjustable="box")
-            plt.tight_layout()
+            z = (1/N) * ((z0 * (N-1)) + self.topic_arg)
             
+        elif self.config["stat"] == "sum":
             
-    def write_map(self):
-        
-        save_dir = os.path.join(self.base_dir, str(uuid.uuid4()))
-        os.mkdir(save_dir)
-        
-        pickle.dump(self.map, open(save_dir + "/topic_map.pkl", "wb"))
-        rospy.loginfo("saving topic map '{}'".format(save_dir + "/topic_map.pkl"))
-        
-        with open(save_dir + "/config.yaml",'w') as f:
-            yaml.dump(self.config, f, default_flow_style=False)
-        
+            z = z0 + self.topic_arg
             
+        return z
+        
+                        
     def stop_mapping(self):
         self._stop_event.set()
         
