@@ -28,19 +28,76 @@ class TopicMapServer(object):
             os.mkdir(self.base_dir)    
         
         self.topic_monitors = topic_monitors
+
         self._stop_event = Event()
             
-        rospy.Service("/sentor/write_maps", Trigger, self.write_maps)   
-        #rospy.Service("/sentor/plot_maps", Empty, self.plot_maps)   
-        rospy.Service("/sentor/clear_maps", Empty, self.clear_maps)   
-        rospy.Service("/sentor/stop_mapping", Empty, self.stop_mapping)   
-        rospy.Service("/sentor/start_mapping", Empty, self.start_mapping)   
+        rospy.Service("/sentor/write_maps", Trigger, self.write_maps_srv)   
+        #rospy.Service("/sentor/plot_maps", Empty, self.plot_maps_srv)   
+        rospy.Service("/sentor/clear_maps", Empty, self.clear_maps_srv)   
+        rospy.Service("/sentor/stop_mapping", Empty, self.stop_mapping_srv)   
+        rospy.Service("/sentor/start_mapping", Empty, self.start_mapping_srv)   
         
         self.maps_pub = rospy.Publisher('/sentor/topic_maps', TopicMapArray, queue_size=10)
         rospy.Timer(rospy.Duration(1.0/map_pub_rate), self.publish_maps)
         
         if plotting:
-            rospy.Timer(rospy.Duration(1.0/plt_rate), self.plot_maps_continuous)
+            rospy.Timer(rospy.Duration(1.0/plt_rate), self.plot_maps)
+            
+            
+    def write_maps_srv(self, req):
+    
+        message = "Saving maps: "
+        for monitor in self.topic_monitors:
+            if monitor.map is not None:
+
+                map_dir = os.path.join(self.base_dir, str(uuid.uuid4()))
+                os.mkdir(map_dir)
+                
+                _map = monitor.topic_mapper.map
+                pickle.dump(_map, open(map_dir + "/topic_map.pkl", "wb"))
+            
+                with open(map_dir + "/config.yaml",'w') as f:
+                    yaml.dump(monitor.map, f, default_flow_style=False)                
+                    
+                message = message + map_dir + " "
+            
+        ans = TriggerResponse()
+        ans.success = True
+        ans.message = message
+        return ans
+            
+            
+#    def plot_maps_srv(self, req):
+#        
+#        self.gen_plots()
+#        plt.show()
+#
+#        ans = EmptyResponse()
+#        return ans
+            
+            
+    def clear_maps_srv(self, req):
+        
+        for monitor in self.topic_monitors:
+            if monitor.map is not None:
+                monitor.topic_mapper.init_map()
+            
+        ans = EmptyResponse()
+        return ans
+        
+        
+    def stop_mapping_srv(self, req):
+        self.stop_mapping()
+        
+        ans = EmptyResponse()
+        return ans
+        
+
+    def start_mapping_srv(self, req):
+        self.start_mapping()
+        
+        ans = EmptyResponse()
+        return ans
         
         
     def publish_maps(self, event=None):
@@ -69,40 +126,7 @@ class TopicMapServer(object):
             self.maps_pub.publish(map_msgs)
             
             
-    def write_maps(self, req):
-    
-        message = "Saving maps: "
-        for monitor in self.topic_monitors:
-            if monitor.map is not None:
-
-                map_dir = os.path.join(self.base_dir, str(uuid.uuid4()))
-                os.mkdir(map_dir)
-                
-                config = monitor.map
-                _map = monitor.topic_mapper.map
-            
-                pickle.dump(_map, open(map_dir + "/topic_map.pkl", "wb"))
-                with open(map_dir + "/config.yaml",'w') as f:
-                    yaml.dump(config, f, default_flow_style=False)                
-                    
-                message = message + map_dir + "  "
-            
-        ans = TriggerResponse()
-        ans.success = True
-        ans.message = message
-        return ans
-            
-            
-#    def plot_maps(self, req):
-#        
-#        self.gen_plots()
-#        plt.show()
-#        ans = EmptyResponse()
-#        
-#        return ans
-            
-            
-    def plot_maps_continuous(self, event=None):
+    def plot_maps(self, event=None):
         
         if not self._stop_event.isSet():
             self.gen_plots()
@@ -114,8 +138,8 @@ class TopicMapServer(object):
         for monitor in self.topic_monitors:
             if monitor.map is not None:                
 
-                fig_id = str(_id) + ":  " + monitor.topic_name + "  " + monitor.map["topic_arg"]
-
+                fig_id = str(_id) + ": " + monitor.topic_name + " " + monitor.map["topic_arg"] + " " + monitor.map["stat"] 
+                
                 _map = monitor.topic_mapper.map
                 masked_map = np.ma.array(_map, mask=np.isnan(_map))
                 
@@ -129,44 +153,20 @@ class TopicMapServer(object):
                 _id += 1
         
         
-    def clear_maps(self):
-        
-        for monitor in self.topic_monitors:
-            if monitor.map is not None:
-                monitor.topic_mapper.init_map()
-            
-        ans = EmptyResponse()
-        return ans
-        
-        
-    def stop_mapping(self, req):
+    def stop_mapping(self):
         
         for monitor in self.topic_monitors:
             if monitor.map is not None:
                 monitor.topic_mapper.stop_mapping()
                 
-        self.stop_monitoring
-        
-        ans = EmptyResponse()
-        return ans
+        self._stop_event.set()
         
 
-    def start_mapping(self, req):
+    def start_mapping(self):
         
         for monitor in self.topic_monitors:
             if monitor.map is not None:
                 monitor.topic_mapper.start_mapping()
                 
-        self.start_monitoring
-        
-        ans = EmptyResponse()
-        return ans
-        
-        
-    def stop_monitoring(self):
-        self._stop_event.set()
-
-
-    def start_monitoring(self):
         self._stop_event.clear()
 ##########################################################################################

@@ -73,10 +73,10 @@ class SafetyMonitor(object):
         return ans
         
         
-    def stop_monitoring(self):
+    def stop_monitor(self):
         self._stop_event.set()
 
 
-    def start_monitoring(self):
+    def start_monitor(self):
         self._stop_event.clear()
 #####################################################################################

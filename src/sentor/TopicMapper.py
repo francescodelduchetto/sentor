@@ -116,12 +116,20 @@ class TopicMapper(object):
     def compute_stat(self, N, z0):
         
         if self.config["stat"] == "mean":       
-            
             z = (1/N) * ((z0 * (N-1)) + self.topic_arg)
             
         elif self.config["stat"] == "sum":
-            
             z = z0 + self.topic_arg
+            
+        elif self.config["stat"] == "min":
+            z = np.min([z0, self.topic_arg])
+            
+        elif self.config["stat"] == "max":
+            z = np.max([z0, self.topic_arg])
+
+        else:
+            rospy.logwarn("Statistic of type '{}' not supported".format(self.config["stat"]))
+            z = np.nan
             
         return z
         
