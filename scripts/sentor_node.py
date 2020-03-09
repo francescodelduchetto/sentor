@@ -2,7 +2,7 @@
 from __future__ import division
 from sentor.TopicMonitor import TopicMonitor
 from sentor.SafetyMonitor import SafetyMonitor
-from sentor.TopicMapMonitor import TopicMapServer
+from sentor.TopicMapServer import TopicMapServer
 from std_msgs.msg import String
 from std_srvs.srv import Empty, EmptyResponse
 import pprint
@@ -39,13 +39,11 @@ def __signal_handler(signum, frame):
 def stop_monitoring(_):
     for topic_monitor in topic_monitors:
         topic_monitor.stop_monitor()
-        if topic_monitor.map is not None:
-            topic_monitor.topic_mapper.stop_mapping()
             
-    safety_monitor.stop_monitoring()
+    safety_monitor.stop_monitor()
     
     if topic_mapping:
-        topic_map_server.stop_monitoring()
+        topic_map_server.stop_mapping()
 
     rospy.logwarn("sentor_node stopped monitoring")
     ans = EmptyResponse()
@@ -55,13 +53,11 @@ def stop_monitoring(_):
 def start_monitoring(_):
     for topic_monitor in topic_monitors:
         topic_monitor.start_monitor()
-        if topic_monitor.map is not None:
-            topic_monitor.topic_mapper.start_mapping()
             
-    safety_monitor.start_monitoring()
+    safety_monitor.start_monitor()
     
     if topic_mapping:
-        topic_map_server.start_monitoring()
+        topic_map_server.start_mapping()
 
     rospy.logwarn("sentor_node started monitoring")
     ans = EmptyResponse()
