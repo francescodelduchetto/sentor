@@ -43,7 +43,7 @@ def stop_monitoring(_):
     safety_monitor.stop_monitor()
     
     if topic_mapping:
-        topic_map_server.stop_mapping()
+        topic_map_server.stop()
 
     rospy.logwarn("sentor_node stopped monitoring")
     ans = EmptyResponse()
@@ -52,7 +52,7 @@ def stop_monitoring(_):
 
 def start_monitoring(_):
     for topic_monitor in topic_monitors:
-        topic_monitor.start_monitor()
+        topic_monitor.start()
             
     safety_monitor.start_monitor()
     
@@ -159,9 +159,8 @@ if __name__ == "__main__":
     
     if topic_mapping:
         map_pub_rate = rospy.get_param("~map_pub_rate", "") 
-        plt = rospy.get_param("~plt", "") 
-        plt_rate = rospy.get_param("~plt_rate", "") 
-        topic_map_server = TopicMapServer(topic_monitors, map_pub_rate, plt, plt_rate)
+        map_plt_rate = rospy.get_param("~map_plt_rate", "") 
+        topic_map_server = TopicMapServer(topic_monitors, map_pub_rate, map_plt_rate)
 
     # start monitoring
     for topic_monitor in topic_monitors:

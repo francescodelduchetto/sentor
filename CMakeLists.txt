@@ -15,6 +15,11 @@ add_message_files(
   TopicMapArray.msg
 )
 
+add_service_files(
+  FILES
+  GetTopicMaps.srv
+)
+
 generate_messages(
   DEPENDENCIES
   std_msgs
