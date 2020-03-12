@@ -18,8 +18,11 @@ class TopicMapper(object):
         self.config = config
         self.config["topic"] = topic
         
-        self.x_bins = np.arange(config["limits"][0], config["limits"][1], config["resolution"])
-        self.y_bins = np.arange(config["limits"][2], config["limits"][3], config["resolution"])
+        self.x_min, self.x_max = config["limits"][:2]
+        self.y_min, self.y_max = config["limits"][2:4]
+        
+        self.x_bins = np.arange(self.x_min, self.x_max, config["resolution"])
+        self.y_bins = np.arange(self.y_min, self.y_max, config["resolution"])
         
         self.nx = self.x_bins.shape[0] + 1
         self.ny = self.y_bins.shape[0] + 1
@@ -54,11 +57,9 @@ class TopicMapper(object):
             except: 
                 rospy.logwarn("Failed to get transform between the map and baselink frames")
                 return
-            
-            if x >= self.config["limits"][0] and x <= self.config["limits"][1] \
-            and y >= self.config["limits"][2] and y <= self.config["limits"][3]:
                 
-                valid_arg = self.process_topic_arg(msg)
+            if self.x_min <= x <= self.x_max and self.y_min <= y <= self.y_max:  
+                valid_arg = self.process_arg(msg)
                 
                 if valid_arg:
                     self.update_map(x, y)
@@ -73,7 +74,7 @@ class TopicMapper(object):
         return trans[0], trans[1]
         
         
-    def process_topic_arg(self, msg):
+    def process_arg(self, msg):
         
         try:
             self.topic_arg = eval(self.config["topic_arg"])
@@ -88,7 +89,7 @@ class TopicMapper(object):
             else:
                 self.topic_arg = 0
         elif type(self.topic_arg) is not float and type(self.topic_arg) is not int:
-            rospy.logwarn("Topic arg of {} on topic '{}' cannot be processed".format(type(self.topic_arg), self.config["topic"]))
+            rospy.logwarn("Topic arg {} of {} on topic '{}' cannot be processed".format(self.topic_arg, type(self.topic_arg), self.config["topic"]))
             valid_arg = False
         
         return valid_arg
