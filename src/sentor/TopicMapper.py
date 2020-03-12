@@ -19,7 +19,7 @@ class TopicMapper(object):
         self.config["topic"] = topic
         
         self.x_min, self.x_max = config["limits"][:2]
-        self.y_min, self.y_max = config["limits"][2:4]
+        self.y_min, self.y_max = config["limits"][2:]
         
         self.x_bins = np.arange(self.x_min, self.x_max, config["resolution"])
         self.y_bins = np.arange(self.y_min, self.y_max, config["resolution"])
