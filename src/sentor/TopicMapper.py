@@ -141,8 +141,9 @@ class TopicMapper(object):
             if np.isnan(wm): wm=0
                 
             wm = weighted_mean(wm, self.topic_arg)
-            z = np.sqrt(weighted_mean(z**2, (wm-self.topic_arg)**2))
             self.wma[self.ix, self.iy] = wm
+            
+            z = np.sqrt(weighted_mean(z**2, (wm-self.topic_arg)**2))
 
         else:
             rospy.logwarn("Statistic of type '{}' not supported".format(self.config["stat"]))
