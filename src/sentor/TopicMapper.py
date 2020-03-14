@@ -42,11 +42,15 @@ class TopicMapper(object):
         self.obs = np.zeros((self.nx, self.ny))
         self.map = np.zeros((self.nx, self.ny))  
         self.map[:] = np.nan
-        
+
+        self.index = [np.nan, np.nan]        
         self.position = [np.nan, np.nan]
-        self.index = [np.nan, np.nan]
         self.arg_at_position = np.nan
         
+        if self.config["stat"] == "std":
+            self.wma = np.zeros((self.nx, self.ny))
+            self.wma[:] = np.nan
+            
  
     def topic_cb(self, msg):
         
@@ -79,7 +83,7 @@ class TopicMapper(object):
         try:
             self.topic_arg = eval(self.config["topic_arg"])
         except Exception as e:
-            rospy.logwarn("Exception while evaluating {}: {}".format(self.config["topic_arg"], e))
+            rospy.logwarn("Exception while evaluating '{}': {}".format(self.config["topic_arg"], e))
             return False
             
         valid_arg = True
@@ -89,7 +93,7 @@ class TopicMapper(object):
             else:
                 self.topic_arg = 0
         elif type(self.topic_arg) is not float and type(self.topic_arg) is not int:
-            rospy.logwarn("Topic arg {} of {} on topic '{}' cannot be processed".format(self.topic_arg, type(self.topic_arg), self.config["topic"]))
+            rospy.logwarn("Topic arg '{}' of {} on topic '{}' cannot be processed".format(self.topic_arg, type(self.topic_arg), self.config["topic"]))
             valid_arg = False
         
         return valid_arg
@@ -99,38 +103,50 @@ class TopicMapper(object):
 
         ix = np.digitize(x, self.x_bins)
         iy = np.digitize(y, self.y_bins)     
+        self.ix = ix
+        self.iy = iy
         
         self.obs[ix, iy] += 1        
         N = self.obs[ix, iy]
         
-        z0 = self.map[ix, iy]
-        if np.isnan(z0): z0=0
+        z = self.map[ix, iy]
+        if np.isnan(z): z=0
+        z = self.compute_stat(z, N)
             
-        z = self.compute_stat(N, z0)
-
         self.map[ix, iy] = z        
-        self.position = [x, y]
         self.index = [ix, iy]
+        self.position = [x, y]
         self.arg_at_position = z
         
         
-    def compute_stat(self, N, z0):
+    def compute_stat(self, z, N):
         
-        if self.config["stat"] == "mean":       
-            z = (1/N) * ((z0 * (N-1)) + self.topic_arg)
+        weighted_mean = lambda m, x: (1/N) * ((m * (N-1)) + x)
+        
+        
+        if self.config["stat"] == "mean":
+            z = weighted_mean(z, self.topic_arg)
             
         elif self.config["stat"] == "sum":
-            z = z0 + self.topic_arg
+            z += self.topic_arg
             
         elif self.config["stat"] == "min":
-            z = np.min([z0, self.topic_arg])
+            z = np.min([z, self.topic_arg])
             
         elif self.config["stat"] == "max":
-            z = np.max([z0, self.topic_arg])
+            z = np.max([z, self.topic_arg])
+            
+        elif self.config["stat"] == "std":
+            wm = self.wma[self.ix, self.iy]
+            if np.isnan(wm): wm=0
+                
+            wm = weighted_mean(wm, self.topic_arg)
+            z = np.sqrt(weighted_mean(z**2, (wm-self.topic_arg)**2))
+            self.wma[self.ix, self.iy] = wm
 
         else:
             rospy.logwarn("Statistic of type '{}' not supported".format(self.config["stat"]))
-            z = np.nan
+            z = np.nan; 
             
         return z
         

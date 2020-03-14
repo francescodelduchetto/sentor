@@ -82,30 +82,6 @@ class TopicMapServer(object):
         return ans
         
         
-    def fill_msg(self, topic_maps):
-        
-        for monitor in self.topic_monitors:
-            if monitor.map is not None:
-                    
-                map_msg = TopicMap()
-                map_msg.header.stamp = rospy.Time.now()
-                map_msg.header.frame_id = "/map"
-                map_msg.topic_name = monitor.topic_name
-                map_msg.topic_arg = monitor.map["topic_arg"]
-                map_msg.resolution = monitor.map["resolution"]
-                map_msg.shape = monitor.topic_mapper.shape
-                map_msg.position = monitor.topic_mapper.position
-                map_msg.index = monitor.topic_mapper.index
-                map_msg.arg_at_position = monitor.topic_mapper.arg_at_position
-    
-                topic_map = np.ndarray.tolist(np.ravel(monitor.topic_mapper.map))
-                map_msg.topic_map = topic_map
-            
-                topic_maps.topic_maps.append(map_msg)
-                
-        return topic_maps
-            
-            
     def clear_maps(self, req):
         
         for monitor in self.topic_monitors:
@@ -130,24 +106,6 @@ class TopicMapServer(object):
         return ans
         
         
-    def stop(self):
-
-        self._stop_event.set()    
-        
-        for monitor in self.topic_monitors:
-            if monitor.map is not None:
-                monitor.topic_mapper.stop_mapping()
-                
-        
-    def start(self):
-
-        self._stop_event.clear()      
-        
-        for monitor in self.topic_monitors:
-            if monitor.map is not None:
-                monitor.topic_mapper.start_mapping()
-                
-                
     def publish_maps(self, event=None):
         
         if not self._stop_event.isSet():
@@ -178,4 +136,47 @@ class TopicMapServer(object):
                     plt.tight_layout()
         
                 _id += 1
+        
+        
+    def fill_msg(self, topic_maps):
+        
+        for monitor in self.topic_monitors:
+            if monitor.map is not None:
+                    
+                map_msg = TopicMap()
+                map_msg.header.stamp = rospy.Time.now()
+                map_msg.header.frame_id = "/map"
+                map_msg.topic_name = monitor.topic_name
+                map_msg.topic_arg = monitor.map["topic_arg"]
+                map_msg.stat = monitor.map["stat"]
+                map_msg.resolution = monitor.map["resolution"]
+                map_msg.shape = monitor.topic_mapper.shape
+                map_msg.index = monitor.topic_mapper.index
+                map_msg.position = monitor.topic_mapper.position
+                map_msg.arg_at_position = monitor.topic_mapper.arg_at_position
+    
+                topic_map = np.ndarray.tolist(np.ravel(monitor.topic_mapper.map))
+                map_msg.topic_map = topic_map
+            
+                topic_maps.topic_maps.append(map_msg)
+                
+        return topic_maps
+        
+                
+    def stop(self):
+
+        self._stop_event.set()    
+        
+        for monitor in self.topic_monitors:
+            if monitor.map is not None:
+                monitor.topic_mapper.stop_mapping()
+                
+        
+    def start(self):
+
+        self._stop_event.clear()      
+        
+        for monitor in self.topic_monitors:
+            if monitor.map is not None:
+                monitor.topic_mapper.start_mapping()
 ##########################################################################################
