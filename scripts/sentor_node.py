@@ -57,7 +57,7 @@ def start_monitoring(_):
     safety_monitor.start_monitor()
     
     if topic_mapping:
-        topic_map_server.start_mapping()
+        topic_map_server.start()
 
     rospy.logwarn("sentor_node started monitoring")
     ans = EmptyResponse()
