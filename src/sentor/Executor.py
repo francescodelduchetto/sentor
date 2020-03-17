@@ -6,6 +6,7 @@ Created on Thu Nov 21 10:30:22 2019
 """
 #####################################################################################
 import rospy, rosservice, rostopic, actionlib, subprocess
+import dynamic_reconfigure.client
 from threading import Lock
 
 
@@ -44,6 +45,9 @@ class Executor(object):
                 
             elif process_type == "log":
                 self.init_log(process)
+                
+            elif process_type == "reconf":
+                self.init_reconf(process)
                 
             else:
                 self.event_cb("Process of type '{}' not supported".format(process_type), "warn")
@@ -205,6 +209,23 @@ class Executor(object):
             self.event_cb(self.init_err_str.format("log", str(e)), "warn")
             
             
+    def init_reconf(self, process):
+        
+        try:
+            d = {}
+            d["name"] = "reconf"
+            d["verbose"] = self.is_verbose(process["reconf"])
+            d["def_msg"] = ("Reconfiguring parameters {}".format(process["reconf"]["params"]), "info", "")
+            d["func"] = "self.reconf(**kwargs)"
+            d["kwargs"] = {}
+            d["kwargs"]["params"] = process["reconf"]["params"]
+            
+            self.processes.append(d)
+
+        except Exception as e:
+            self.event_cb(self.init_err_str.format("reconf", str(e)), "warn")
+            
+            
     def is_verbose(self, process):
         
         if "verbose" in process.keys():
@@ -287,6 +308,13 @@ class Executor(object):
             self.event_cb("CUSTOM MSG: " + message.format(*args), level)
         else:
             self.event_cb("CUSTOM MSG: " + message, level)
+            
+            
+    def reconf(self, params):
+        
+        for param in params:
+            rcnfclient = dynamic_reconfigure.client.Client(param["ns"], timeout=2.0)
+            rcnfclient.update_configuration({param["name"]: param["value"]})
          
         
     def goal_cb(self, status, result):

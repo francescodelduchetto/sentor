@@ -20,6 +20,15 @@
       action_spec: "GotoNodeAction"
       goal_args:
       -  "goal.target = 'WayPoint45'"
+  - reconf:
+      verbose: True
+      params:
+      - ns: row_detector
+        name: angle_error_threshold
+        value: -1
+  - log:
+      message: "Row detection disabled"
+      level: warn
   - shell:
       verbose: True
       cmd_args:
@@ -40,6 +49,15 @@
   - expression: "lambda msg: msg.feedback.route == 'WayPoint45'"
     safety_critical: False
   execute:
+  - reconf:
+      verbose: True
+      params:
+      - ns: row_detector
+        name: angle_error_threshold
+        value: 0.175
+  - log:
+      message: "Row detection enabled"
+      level: info
   - call:
       verbose: True
       service_name: "/sentor/set_safety_tag"

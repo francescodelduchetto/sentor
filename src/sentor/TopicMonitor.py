@@ -82,8 +82,9 @@ class TopicMonitor(Thread):
             if self.signal_when.lower() == 'not published' and self.safety_critical:
                 self.signal_when_is_safe = False
             return False
-            
-        self.hz_monitor = self._instantiate_hz_monitor(real_topic, self.topic_name, msg_class)
+        
+        if self.signal_when.lower() == 'not published' or self.lambdas_when_published:
+            self.hz_monitor = self._instantiate_hz_monitor(real_topic, self.topic_name, msg_class)
 
         if self.signal_when.lower() == 'published':
             print "Signaling 'published' for "+ bcolors.OKBLUE + self.topic_name + bcolors.ENDC +" initialized"
