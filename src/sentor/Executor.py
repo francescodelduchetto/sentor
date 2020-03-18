@@ -126,6 +126,8 @@ class Executor(object):
             exec("from {}.msg import {} as action_spec".format(package, spec))
             exec("from {}.msg import {} as goal_class".format(package, spec[:-6] + "Goal"))
             
+            rospy.sleep(0.1)
+            
             action_client = actionlib.SimpleActionClient(namespace, action_spec)
             wait = action_client.wait_for_server(rospy.Duration(5.0))
             if not wait:

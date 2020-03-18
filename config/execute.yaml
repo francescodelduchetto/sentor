@@ -24,7 +24,7 @@
       verbose: True
       params:
       - ns: row_detector
-        name: angle_error_threshold
+        name: position_error_threshold
         value: -1
   - log:
       message: "Row detection disabled"
@@ -53,8 +53,8 @@
       verbose: True
       params:
       - ns: row_detector
-        name: angle_error_threshold
-        value: 0.175
+        name: position_error_threshold
+        value: 0.3
   - log:
       message: "Row detection enabled"
       level: info
