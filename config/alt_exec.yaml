@@ -1,0 +1,23 @@
+- name : "/expr_1"
+  signal_lambdas:
+  - expression: "lambda msg : msg.data == True"
+    process_indices: [0, 1]
+  - expression: "lambda msg : msg.data == False"
+    process_indices: [2, 3]
+  execute:
+  - log:
+      message: "expression 1 is True"
+      level: "warn"
+  - log:
+      message: "expression 1 is not False"
+      level: "warn"
+  - log:
+      message: "expression 1 is False"
+      level: "warn"
+  - log:
+      message: "expression 1 is not True"
+      level: "warn"
+  timeout: 0.1
+  repeat_exec: True
+  alt_exec: True
+  include: True
