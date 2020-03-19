@@ -18,6 +18,5 @@
       message: "expression 1 is not True"
       level: "warn"
   timeout: 0.1
-  repeat_exec: True
   alt_exec: True
   include: True
