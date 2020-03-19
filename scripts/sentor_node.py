@@ -116,6 +116,7 @@ if __name__ == "__main__":
         _map = None
         lock_exec = False
         repeat_exec = False
+        alt_exec = False
         timeout = 0
         lambdas_when_published = False
         default_notifications = True
@@ -134,6 +135,8 @@ if __name__ == "__main__":
             lock_exec = topic['lock_exec']
         if 'repeat_exec' in topic.keys():
             repeat_exec = topic['repeat_exec']
+        if 'alt_exec' in topic.keys():
+            alt_exec = topic['alt_exec']
         if 'timeout' in topic.keys():
             timeout = topic['timeout']
         if 'lambdas_when_published' in topic.keys():
@@ -149,7 +152,7 @@ if __name__ == "__main__":
         if include:
             topic_monitor = TopicMonitor(topic_name, signal_when, safety_critical, 
                                          signal_lambdas, processes, _map, lock_exec, 
-                                         repeat_exec, timeout, lambdas_when_published, 
+                                         repeat_exec, alt_exec, timeout, lambdas_when_published, 
                                          default_notifications, event_callback)
 
             topic_monitors.append(topic_monitor)

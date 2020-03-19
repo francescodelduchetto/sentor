@@ -6,7 +6,7 @@ Created on Thu Nov 21 10:30:22 2019
 """
 #####################################################################################
 import rospy, rosservice, rostopic, actionlib, subprocess
-import dynamic_reconfigure.client
+import dynamic_reconfigure.client, copy
 from threading import Lock
 
 
@@ -51,7 +51,8 @@ class Executor(object):
                 
             else:
                 self.event_cb("Process of type '{}' not supported".format(process_type), "warn")
-                
+        
+        self.default_indices = range(len(self.processes))        
         print "\n"
                     
                     
@@ -238,15 +239,21 @@ class Executor(object):
         return verbose
             
         
-    def execute(self, msg=None):
+    def execute(self, msg=None, proc_indices=None):
         
         if self.lock_exec:
             self._lock.acquire()
             
         self.msg = msg
         
-        for process in self.processes:
+        if proc_indices is None:
+            indices = copy.copy(self.default_indices)
+        else:
+            indices = copy.copy(proc_indices)
+        
+        for index in indices:
             rospy.sleep(0.1) # needed when using slackeros
+            process = self.processes[index]
             try:
                 if process["verbose"] and "def_msg" in process.keys():
                     self.event_cb(process["def_msg"][0], process["def_msg"][1], process["def_msg"][2])
