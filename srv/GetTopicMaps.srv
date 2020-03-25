@@ -1,0 +1,4 @@
+std_msgs/Empty empty
+---
+sentor/TopicMapArray topic_maps
+bool success

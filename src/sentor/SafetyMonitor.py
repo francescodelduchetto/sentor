@@ -9,6 +9,7 @@ from __future__ import division
 import rospy
 from std_msgs.msg import Bool
 from std_srvs.srv import SetBool, SetBoolResponse
+from threading import Event
 
 
 class SafetyMonitor(object):
@@ -23,6 +24,8 @@ class SafetyMonitor(object):
         self.safe_operation = True        
         self.safe_msg_sent = False
         self.unsafe_msg_sent = False
+        
+        self._stop_event = Event()
 
         self.safety_pub = rospy.Publisher('/safe_operation', Bool, queue_size=10)
         rospy.Timer(rospy.Duration(1.0/rate), self.safety_pub_cb)
@@ -36,25 +39,27 @@ class SafetyMonitor(object):
         
     def safety_pub_cb(self, event=None):
         
-        if self.topic_monitors:
-            threads_are_safe = [monitor.thread_is_safe for monitor in self.topic_monitors]
-            
-            if all(threads_are_safe) and self.auto_tagging:
-                self.safe_operation = True
-            elif not all(threads_are_safe):
-                self.safe_operation = False
+        if not self._stop_event.isSet():
+        
+            if self.topic_monitors:
+                threads_are_safe = [monitor.thread_is_safe for monitor in self.topic_monitors]
                 
-            self.safety_pub.publish(Bool(self.safe_operation))
-
-            if all(threads_are_safe) and not self.safe_msg_sent:
-                self.event_cb("SAFE OPERATION: TRUE", "info")
-                self.safe_msg_sent = True
-                self.unsafe_msg_sent = False
-                
-            elif not all(threads_are_safe) and not self.unsafe_msg_sent:
-                self.event_cb("SAFE OPERATION: FALSE", "warn")
-                self.safe_msg_sent = False
-                self.unsafe_msg_sent = True
+                if all(threads_are_safe) and self.auto_tagging:
+                    self.safe_operation = True
+                elif not all(threads_are_safe):
+                    self.safe_operation = False
+                    
+                self.safety_pub.publish(Bool(self.safe_operation))
+    
+                if all(threads_are_safe) and not self.safe_msg_sent:
+                    self.event_cb("SAFE OPERATION: TRUE", "info")
+                    self.safe_msg_sent = True
+                    self.unsafe_msg_sent = False
+                    
+                elif not all(threads_are_safe) and not self.unsafe_msg_sent:
+                    self.event_cb("SAFE OPERATION: FALSE", "warn")
+                    self.safe_msg_sent = False
+                    self.unsafe_msg_sent = True
         
         
     def set_safety_tag(self, req):
@@ -66,4 +71,12 @@ class SafetyMonitor(object):
         ans.message = "safe operation: {}".format(req.data)
         
         return ans
+        
+        
+    def stop_monitor(self):
+        self._stop_event.set()
+
+
+    def start_monitor(self):
+        self._stop_event.clear()
 #####################################################################################

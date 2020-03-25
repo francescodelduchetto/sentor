@@ -1,0 +1,17 @@
+- name : "/sim_amcl_error"
+  map:
+    topic_arg: "msg.y"
+    stat: "mean"
+    limits: [3.0, 36.0, -8.0, 8.0]
+    resolution: 1.5
+  include: False
+
+
+- name : "/row_detector/health_monitor"
+  map:
+    topic_arg: "msg.lines_accepted.data == False"
+    stat: "mean"
+    limits: [3.0, 36.0, -8.0, 8.0]
+    resolution: 1.5
+  include: True
+
