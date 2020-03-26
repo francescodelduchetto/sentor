@@ -6,17 +6,17 @@ Created on Thu Nov 21 10:30:22 2019
 """
 #####################################################################################
 import rospy, rosservice, rostopic, actionlib, subprocess
-import dynamic_reconfigure.client, copy
+import dynamic_reconfigure.client
+from copy import copy
 from threading import Lock
 
 
 class Executor(object):
     
     
-    def __init__(self, config, lock_exec, event_cb):
+    def __init__(self, config, event_cb):
 
         self.config = config
-        self.lock_exec = lock_exec
         self.event_cb = event_cb
         
         self.init_err_str = "Unable to initialise process of type '{}': {}"
@@ -48,6 +48,12 @@ class Executor(object):
                 
             elif process_type == "reconf":
                 self.init_reconf(process)
+
+            elif process_type == "lock_acquire":
+                self.init_lock_acquire(process)
+
+            elif process_type == "lock_release":
+                self.init_lock_release(process)
                 
             else:
                 self.event_cb("Process of type '{}' not supported".format(process_type), "warn")
@@ -227,6 +233,36 @@ class Executor(object):
 
         except Exception as e:
             self.event_cb(self.init_err_str.format("reconf", str(e)), "warn")
+
+
+    def init_lock_acquire(self, process):
+        
+        try:
+            d = {}
+            d["name"] = "lock_acquire"
+            d["verbose"] = False
+            d["func"] = "self.lock_acquire()"
+            d["kwargs"] = {}
+            
+            self.processes.append(d)
+
+        except Exception as e:
+            self.event_cb(self.init_err_str.format("lock_acquire", str(e)), "warn")
+            
+
+    def init_lock_release(self, process):
+        
+        try:
+            d = {}
+            d["name"] = "lock_release"
+            d["verbose"] = False
+            d["func"] = "self.lock_release()"
+            d["kwargs"] = {}
+            
+            self.processes.append(d)
+
+        except Exception as e:
+            self.event_cb(self.init_err_str.format("lock_release", str(e)), "warn")
             
             
     def is_verbose(self, process):
@@ -239,17 +275,14 @@ class Executor(object):
         return verbose
             
         
-    def execute(self, msg=None, proc_indices=None):
+    def execute(self, msg=None, process_indices=None):
         
-        if self.lock_exec:
-            self._lock.acquire()
-            
         self.msg = msg
         
-        if proc_indices is None:
-            indices = copy.copy(self.default_indices)
+        if process_indices is None:
+            indices = copy(self.default_indices)
         else:
-            indices = copy.copy(proc_indices)
+            indices = copy(process_indices)
         
         for index in indices:
             rospy.sleep(0.1) # needed when using slackeros
@@ -263,9 +296,6 @@ class Executor(object):
                 
             except Exception as e:
                 self.event_cb("Unable to execute process of type '{}': {}".format(process["name"], str(e)), "warn")
-            
-        if self.lock_exec:
-            self._lock.release()
             
 
     def call(self, service_name, service_client, req, verbose):
@@ -324,6 +354,14 @@ class Executor(object):
         for param in params:
             rcnfclient = dynamic_reconfigure.client.Client(param["ns"], timeout=2.0)
             rcnfclient.update_configuration({param["name"]: param["value"]})
+            
+            
+    def lock_acquire(self):
+        self._lock.acquire()
+
+
+    def lock_release(self):
+        self._lock.release()
          
         
     def goal_cb(self, status, result):

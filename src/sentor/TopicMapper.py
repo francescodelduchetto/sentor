@@ -139,7 +139,7 @@ class TopicMapper(object):
         elif self.config["stat"] == "std":
             wm = self.wma[self.ix, self.iy]
             if np.isnan(wm): wm=0
-                
+
             wm = weighted_mean(wm, self.topic_arg)
             self.wma[self.ix, self.iy] = wm
             
