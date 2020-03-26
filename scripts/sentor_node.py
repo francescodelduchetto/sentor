@@ -1,8 +1,10 @@
 #!/usr/bin/env python
+from __future__ import division
 from sentor.TopicMonitor import TopicMonitor
 from sentor.SafetyMonitor import SafetyMonitor
+from sentor.TopicMapServer import TopicMapServer
 from std_msgs.msg import String
-from std_srvs.srv import Empty
+from std_srvs.srv import Empty, EmptyResponse
 import pprint
 import signal
 import rospy
@@ -32,20 +34,35 @@ def __signal_handler(signum, frame):
     join_monitors()
     print "stopped."
     os._exit(signal.SIGTERM)
+    
 
 def stop_monitoring(_):
     for topic_monitor in topic_monitors:
         topic_monitor.stop_monitor()
+            
+    safety_monitor.stop_monitor()
+    
+    if topic_mapping:
+        topic_map_server.stop()
 
     rospy.logwarn("sentor_node stopped monitoring")
-    return
+    ans = EmptyResponse()
+    return ans
+    
 
 def start_monitoring(_):
     for topic_monitor in topic_monitors:
-        topic_monitor.start_monitor()
+        topic_monitor.start()
+            
+    safety_monitor.start_monitor()
+    
+    if topic_mapping:
+        topic_map_server.start()
 
     rospy.logwarn("sentor_node started monitoring")
-    return
+    ans = EmptyResponse()
+    return ans
+    
 
 def event_callback(string, type, msg=""):
     if type == "info":
@@ -57,7 +74,7 @@ def event_callback(string, type, msg=""):
 
     if event_pub is not None:
         event_pub.publish(String("%s: %s" % (type, string)))
-
+    
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, __signal_handler)
@@ -80,8 +97,9 @@ if __name__ == "__main__":
 
     safety_pub_rate = rospy.get_param("~safety_pub_rate", "")    
     auto_safety_tagging = rospy.get_param("~auto_safety_tagging", "")        
-    safety_monitor = SafetyMonitor(safety_pub_rate, auto_safety_tagging, event_callback)
+    safety_monitor = SafetyMonitor(safety_pub_rate, auto_safety_tagging, event_callback)   
 
+    topic_mapping = False
     topic_monitors = []
     print "Monitoring topics:"
     for topic in topics:
@@ -95,6 +113,7 @@ if __name__ == "__main__":
         safety_critical = False
         signal_lambdas = []
         processes = []
+        _map = None
         lock_exec = False
         repeat_exec = False
         timeout = 0
@@ -109,6 +128,8 @@ if __name__ == "__main__":
             signal_lambdas = topic['signal_lambdas']
         if 'execute' in topic.keys():
             processes = topic['execute']
+        if 'map' in topic.keys():
+            _map = topic['map']
         if 'lock_exec' in topic.keys():
             lock_exec = topic['lock_exec']
         if 'repeat_exec' in topic.keys():
@@ -121,18 +142,29 @@ if __name__ == "__main__":
             default_notifications = topic['default_notifications']
         if 'include' in topic.keys():
             include = topic['include']
+            
+        if include and _map is not None:
+            topic_mapping = True
 
         if include:
             topic_monitor = TopicMonitor(topic_name, signal_when, safety_critical, 
-                                         signal_lambdas, processes, lock_exec, repeat_exec, 
-                                         timeout, lambdas_when_published, default_notifications, event_callback)
+                                         signal_lambdas, processes, _map, lock_exec, 
+                                         repeat_exec, timeout, lambdas_when_published, 
+                                         default_notifications, event_callback)
+
             topic_monitors.append(topic_monitor)
             safety_monitor.register_monitors(topic_monitor)
             
     time.sleep(1)
+    
+    if topic_mapping:
+        map_pub_rate = rospy.get_param("~map_pub_rate", "") 
+        map_plt_rate = rospy.get_param("~map_plt_rate", "") 
+        topic_map_server = TopicMapServer(topic_monitors, map_pub_rate, map_plt_rate)
 
     # start monitoring
     for topic_monitor in topic_monitors:
         topic_monitor.start()
 
     rospy.spin()
+##########################################################################################
