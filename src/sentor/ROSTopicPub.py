@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+"""
+@author: Francesco Del Duchetto (FDelDuchetto@lincoln.ac.uk)
+
+"""
+#####################################################################################
 import rospy
 
 
@@ -16,3 +22,4 @@ class ROSTopicPub(object):
     def register_published_cb(self, func):
 
         self.pub_callbacks.append(func)
+#####################################################################################

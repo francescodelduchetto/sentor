@@ -1,6 +1,10 @@
+#!/usr/bin/env python
 """
+@author: Francesco Del Duchetto (FDelDuchetto@lincoln.ac.uk)
+
 Modified from https://github.com/strawlab/ros_comm/blob/master/tools/rostopic/src/rostopic.py
 """
+#####################################################################################
 import rospy
 import threading
 import math
@@ -122,3 +126,4 @@ class ROSTopicHz(object):
 
             self.last_printed_tn = self.msg_tn
         return rate
+#####################################################################################

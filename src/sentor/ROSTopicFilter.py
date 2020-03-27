@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+"""
+@author: Francesco Del Duchetto (FDelDuchetto@lincoln.ac.uk)
+
+"""
+#####################################################################################
 import rospy, math
 # imported the package `math` so that it can be used in the lambda expressions
 
@@ -66,3 +72,4 @@ class ROSTopicFilter(object):
     def register_unsatisfied_cb(self, func):
 
         self.unsat_callbacks.append(func)
+#####################################################################################
