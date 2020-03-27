@@ -9,7 +9,7 @@
   - expression: "lambda msg : msg.data == True"
     timeout: 0.1
     safety_critical: False
-    when_published: True
+    when_published: False
     process_indices: [0,1]
     repeat_exec: False
   - expression: "lambda msg : msg.data == False"
@@ -17,7 +17,7 @@
     safety_critical: True
     when_published: False
     process_indices: [2,3]
-    repeat_exec: True
+    repeat_exec: False
   execute:
   - log:
       message: "expression 1 is True"
@@ -58,7 +58,7 @@
     safety_critical: True
     when_published: False
     process_indices: [2,3]
-    repeat_exec: True
+    repeat_exec: False
   execute:
   - log:
       message: "expression 2 is True"
@@ -75,32 +75,6 @@
   - log:
       message: "expression 2 is not published"
       level: "warn"
-  timeout: 0.1
-  default_notifications: True
-  include: False
-
-
-- name : "/expr_1"
-  signal_lambdas:
-  - expression: "lambda msg : msg.data == True"
-    timeout: 1.0
-    safety_critical: False
-    when_published: False
-    process_indices: [0]
-    repeat_exec: True
-  - expression: "lambda msg : msg.data != False"
-    timeout: 1.0
-    safety_critical: False
-    when_published: False
-    process_indices: []
-    repeat_exec: True
-  execute:
-  - log:
-      message: "expression 1 is True"
-      level: "info"
-  - log:
-      message: "expression 1 is not False"
-      level: "info"
   timeout: 0.1
   default_notifications: True
   include: False
