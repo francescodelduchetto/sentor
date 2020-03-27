@@ -101,7 +101,7 @@ class TopicMonitor(Thread):
                 self.signal_when_is_safe = False
 
         elif self.signal_when.lower() == 'not published':
-            print "Signaling 'not published' for "+ bcolors.BOLD + str(self.timeout) + " seconds" + bcolors.ENDC +" for " + bcolors.OKBLUE + self.topic_name + bcolors.ENDC +" initialized"
+            print "Signaling 'not published' for "+ bcolors.BOLD + str(self.signal_when_timeout) + " seconds" + bcolors.ENDC +" for " + bcolors.OKBLUE + self.topic_name + bcolors.ENDC +" initialized"
 
         if len(self.signal_lambdas_config):
             print "Signaling expressions for "+ bcolors.OKBLUE + self.topic_name + bcolors.ENDC + ":"
