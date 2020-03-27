@@ -90,7 +90,17 @@ class TopicMonitor(Thread):
                 self.signal_when_is_safe = False
             return False
         
-        self.hz_monitor = self._instantiate_hz_monitor(real_topic, self.topic_name, msg_class)
+        # Do we need a hz monitor?
+        hz_monitor_required = False
+        if self.signal_when.lower() == 'not published':
+            hz_monitor_required = True
+        for signal_lambda in self.signal_lambdas_config:
+             if "when_published" in signal_lambda.keys():
+                 if signal_lambda["when_published"]:
+                     hz_monitor_required = True
+        
+        if hz_monitor_required:
+            self.hz_monitor = self._instantiate_hz_monitor(real_topic, self.topic_name, msg_class)
 
         if self.signal_when.lower() == 'published':
             print "Signaling 'published' for "+ bcolors.OKBLUE + self.topic_name + bcolors.ENDC +" initialized"
