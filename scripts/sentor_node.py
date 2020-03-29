@@ -52,7 +52,7 @@ def stop_monitoring(_):
 
 def start_monitoring(_):
     for topic_monitor in topic_monitors:
-        topic_monitor.start()
+        topic_monitor.start_monitor()
             
     safety_monitor.start_monitor()
     
