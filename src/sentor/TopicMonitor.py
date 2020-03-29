@@ -67,7 +67,6 @@ class TopicMonitor(Thread):
         self.signal_when_is_safe = True
         self.lambdas_are_safe = True
         self.thread_is_safe = True
-        rospy.Timer(rospy.Duration(0.1), self.safety_cb)
 
         self._stop_event = Event()
         self._killed_event = Event()
@@ -247,6 +246,8 @@ class TopicMonitor(Thread):
         while not self._killed_event.isSet():
             while not self._stop_event.isSet():
                 
+                self.safety_cb()
+                
                 # check it is still published (None if not)
                 if self.hz_monitor is not None:
                     rate = self.hz_monitor.get_hz()
@@ -369,7 +370,7 @@ class TopicMonitor(Thread):
             self.executor.execute(msg, process_indices)
             
             
-    def safety_cb(self, event=None):
+    def safety_cb(self):
         if self.signal_when_is_safe and self.lambdas_are_safe:
             self.thread_is_safe = True
         else:
