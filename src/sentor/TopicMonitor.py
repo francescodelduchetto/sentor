@@ -48,9 +48,8 @@ class TopicMonitor(Thread):
         self.event_callback = event_callback
         
         self.process_signal_config()        
-        self.satisfied_expressions = []
+        self.sat_crit_expressions = []
         self.sat_expressions_timer = {}
-        self.sat_expr_crit_timer = {}
         self.sat_expr_repeat_timer = {}
         self.pub_monitor = None
         self.hz_monitor = None
@@ -122,7 +121,7 @@ class TopicMonitor(Thread):
                 lambda_config = self.process_lambda_config(signal_lambda)
                 
                 if lambda_fn_str != "":
-                    print "\t" + bcolors.OKGREEN + lambda_fn_str + bcolors.ENDC + " ("+ bcolors.BOLD+"timeout: %s seconds" %  self.timeout + bcolors.ENDC +")"
+                    print "\t" + bcolors.OKGREEN + lambda_fn_str + bcolors.ENDC + " ("+ bcolors.BOLD+"timeout: %s seconds" %  lambda_config["timeout"] + bcolors.ENDC +")"
                     lambda_monitor = self._instantiate_lambda_monitor(real_topic, msg_class, lambda_fn_str, lambda_config)
 
                     # register cb that notifies when the lambda function is True
@@ -289,27 +288,22 @@ class TopicMonitor(Thread):
                 process_lambda = True
             return process_lambda, timer_dict
             
-        
-        if not self._stop_event.isSet():         
-            if config["safety_critical"]:
-                if not expr in self.sat_expr_crit_timer.keys():
-                    def crit_cb(_):
-                        process_lambda, self.sat_expr_crit_timer = ProcessLambda(self.sat_expr_crit_timer)
-                        if process_lambda:
-                            self.lambdas_are_safe = False
-                            if self.default_notifications:
-                                self.event_callback("SAFETY CRITICAL: Expression '%s' for %s seconds on topic %s satisfied" % (expr, config["timeout"], self.topic_name), "warn", msg)
-                    
-                    self._lock.acquire()
-                    self.sat_expr_crit_timer.update({expr: rospy.Timer(rospy.Duration.from_sec(config["timeout"]), crit_cb, oneshot=True)})
-                    self._lock.release()            
-            
+        if not self._stop_event.isSet():    
             if not expr in self.sat_expressions_timer.keys():
+                
                 def cb(_):
                     process_lambda, self.sat_expressions_timer = ProcessLambda(self.sat_expressions_timer)
                     if process_lambda:
-                        if self.default_notifications and not config["safety_critical"]:
-                            self.event_callback("Expression '%s' for %s seconds on topic %s satisfied" % (expr, config["timeout"], self.topic_name), "warn", msg)
+                        if config["safety_critical"]:
+                            self.lambdas_are_safe = False
+                            self.sat_crit_expressions.append(config["expr"])
+                        
+                        if self.default_notifications:
+                            if config["safety_critical"]:
+                                self.event_callback("SAFETY CRITICAL: Expression '%s' for %s seconds on topic %s satisfied" % (expr, config["timeout"], self.topic_name), "warn", msg)
+                            else:
+                                self.event_callback("Expression '%s' for %s seconds on topic %s satisfied" % (expr, config["timeout"], self.topic_name), "warn", msg)
+                        
                         if not config["repeat_exec"]:
                             self.execute(msg, config["process_indices"])
                 
@@ -319,9 +313,10 @@ class TopicMonitor(Thread):
             
             if config["repeat_exec"]:
                 if not expr in self.sat_expr_repeat_timer.keys():
+                    
                     def repeat_cb(_):
                         process_lambda, self.sat_expr_repeat_timer = ProcessLambda(self.sat_expr_repeat_timer)
-                        if process_lambda:                        
+                        if process_lambda:     
                             self.execute(msg, config["process_indices"])
                             self.sat_expr_repeat_timer = self.kill_timer(self.sat_expr_repeat_timer, config["expr"]) 
                         
@@ -331,17 +326,17 @@ class TopicMonitor(Thread):
                     
 
     def lambda_unsatisfied_cb(self, expr):
-        if not self._stop_event.isSet():
-            if expr in self.sat_expr_crit_timer.keys():
-                self.sat_expr_crit_timer = self.kill_timer(self.sat_expr_crit_timer, expr) 
-            
+        if not self._stop_event.isSet():            
             if expr in self.sat_expressions_timer.keys():
                 self.sat_expressions_timer = self.kill_timer(self.sat_expressions_timer, expr) 
                 
             if expr in self.sat_expr_repeat_timer.keys():
                 self.sat_expr_repeat_timer = self.kill_timer(self.sat_expr_repeat_timer, expr) 
                 
-            if not self.sat_expr_crit_timer:
+            if expr in self.sat_crit_expressions:
+                self.sat_crit_expressions.remove(expr)
+                
+            if not self.sat_crit_expressions:
                 self.lambdas_are_safe = True
                 
                 
