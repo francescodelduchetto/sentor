@@ -2,12 +2,21 @@
 
   
 - name: "/topological_navigation/feedback"
-#  signal_when : 'not published'
-#  safety_critical: False
+#  signal_when: 
+#    condition: "not published"
+#    timeout: 0.0
+#    safety_critical: False
+#    process_indices: []
+#    repeat_exec: False
   signal_lambdas:
   - expression: "lambda msg: msg.feedback.route == 'WayPoint1'"
+    timeout: 0.0
     safety_critical: True
+    when_published: False
+#    process_indices: [0,1,2,3,4]
+    repeat_exec: False
   execute:
+  - lock_acquire:
   - log:
       message: "Navigating away from {}"
       level: warn
@@ -20,26 +29,50 @@
       action_spec: "GotoNodeAction"
       goal_args:
       -  "goal.target = 'WayPoint45'"
+  - reconf:
+      verbose: True
+      params:
+      - ns: row_detector
+        name: position_error_threshold
+        value: -1
+  - log:
+      message: "Row detection disabled"
+      level: warn
   - shell:
       verbose: True
       cmd_args:
       - "cowsay"
       - "moo"
+  - lock_release:
   timeout: 0.0
-  lambdas_when_published: False
-  lock_exec: False
-  repeat_exec: False
   default_notifications: True
   include: True                  
 
 
 - name: "/topological_navigation/feedback"
-#  signal_when : 'not published'
-#  safety_critical: False
+#  signal_when:
+#    condition: "not published"
+#    timeout: 0.0
+#    safety_critical: False
+#    process_indices: []
+#    repeat_exec: False
   signal_lambdas:
   - expression: "lambda msg: msg.feedback.route == 'WayPoint45'"
+    timeout: 0.0
     safety_critical: False
+    when_published: False
+#    process_indices: [0,1,2,3,4,5,6,7]
+    repeat_exec: False
   execute:
+  - reconf:
+      verbose: True
+      params:
+      - ns: row_detector
+        name: position_error_threshold
+        value: 0.3
+  - log:
+      message: "Row detection enabled"
+      level: info
   - call:
       verbose: True
       service_name: "/sentor/set_safety_tag"
@@ -68,9 +101,6 @@
       -  "msg.header.frame_id = '/map'"
       -  "msg.pose.pose.orientation.w = 1.0"
   timeout: 0.0
-  lambdas_when_published: False
-  lock_exec: False
-  repeat_exec: False
   default_notifications: True
   include: True   
 
