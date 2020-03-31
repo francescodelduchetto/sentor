@@ -4,39 +4,31 @@
 # timeout: optional (default=0), amount of time (in seconds) for which the signal has to be satisfied before sending the warning.
 
 - name : '/scan'
-  signal_when: 
-    condition: 'not published'
+  signal_when : 'not published'
 
 - name : '/head_xtion/rgb/image_color'
-  signal_when:
-    condition: 'not published'
+  signal_when : 'not published'
 
 - name : '/head_xtion/depth/image_rect'
-  signal_when:
-    condition: 'not published'
+  signal_when : 'not published'
 
 - name : '/tf'
-  signal_when:
-    condition: 'not published'
+  signal_when : 'not published'
 
 - name : '/robot_pose'
-  signal_when:
-    condition: 'not published'
+  signal_when : 'not published'
 
 - name : '/odom'
-  signal_when:
-    condition: 'not published'
+  signal_when : 'not published'
 
 - name : '/battery_state'
-  signal_when:
-    condition: 'not published'
+  signal_when : 'not published'
   signal_lambdas :
     - expression: 'lambda msg : msg.lifePercent < 10'
     - expression: 'lambda msg : msg.lifePercent < 5'
 
 - name : '/motor_status'
-  signal_when:
-    condition: 'not published'
+  signal_when : 'not published'
   signal_lambdas :
     - expression: 'lambda msg : msg.emergency_button_pressed == True'
     - expression: 'lambda msg : msg.emergency_button_pressed == False'
@@ -52,8 +44,7 @@
     - expression: 'lambda msg : msg.freeRunStarted == True'
 
 - name : '/diagnostics_toplevel_state'
-  signal_when:
-    condition: 'not published'
+  signal_when : 'not published'
   signal_lambdas :
     - expression: 'lambda msg : msg.level == 1'
     - expression: 'lambda msg : msg.level == 2'

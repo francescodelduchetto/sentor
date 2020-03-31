@@ -145,16 +145,20 @@ class TopicMonitor(Thread):
         self.process_indices = None
         self.repeat_exec = False
         
-        if "condition" in self.signal_when_config.keys():
-            self.signal_when = self.signal_when_config["condition"]
-        if "timeout" in self.signal_when_config.keys():
-            self.signal_when_timeout = self.signal_when_config["timeout"]
-        if "safety_critical" in self.signal_when_config.keys():
-            self.safety_critical = self.signal_when_config["safety_critical"]
-        if "process_indices" in self.signal_when_config.keys():
-            self.process_indices = self.signal_when_config["process_indices"]
-        if "repeat_exec" in self.signal_when_config.keys():
-            self.repeat_exec = self.signal_when_config["repeat_exec"]
+        if type(self.signal_when_config) is str:
+            self.signal_when = self.signal_when_config
+        elif type(self.signal_when_config) is dict:
+        
+            if "condition" in self.signal_when_config.keys():
+                self.signal_when = self.signal_when_config["condition"]
+            if "timeout" in self.signal_when_config.keys():
+                self.signal_when_timeout = self.signal_when_config["timeout"]
+            if "safety_critical" in self.signal_when_config.keys():
+                self.safety_critical = self.signal_when_config["safety_critical"]
+            if "process_indices" in self.signal_when_config.keys():
+                self.process_indices = self.signal_when_config["process_indices"]
+            if "repeat_exec" in self.signal_when_config.keys():
+                self.repeat_exec = self.signal_when_config["repeat_exec"]
             
         if self.signal_when_timeout <= 0:
             self.signal_when_timeout = 0.1
