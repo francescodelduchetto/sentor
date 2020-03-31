@@ -87,13 +87,11 @@ class TopicMapper(object):
             return False
             
         valid_arg = True
-        if type(self.topic_arg) is bool:    
-            if self.topic_arg:
-                self.topic_arg = 1
-            else:
-                self.topic_arg = 0
-        elif type(self.topic_arg) is not float and type(self.topic_arg) is not int:
-            rospy.logwarn("Topic arg '{}' of {} on topic '{}' cannot be processed".format(self.topic_arg, type(self.topic_arg), self.config["topic"]))
+        arg_type = type(self.topic_arg)
+        if arg_type is bool:
+            self.topic_arg = int(self.topic_arg) 
+        elif arg_type is not float and arg_type is not int:
+            rospy.logwarn("Topic arg '{}' of {} on topic '{}' cannot be processed".format(self.topic_arg, arg_type, self.config["topic"]))
             valid_arg = False
         
         return valid_arg

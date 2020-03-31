@@ -54,18 +54,15 @@ class TopicMonitor(Thread):
         self.pub_monitor = None
         self.hz_monitor = None
         self.is_topic_published = True 
-        self.is_latch = False
-        self.published_filters_list = []
-        self.unsatisfied_expressions = []
         self.is_instantiated = False
         self.is_instantiated = self._instantiate_monitors()
-
-        if processes:
-            self.executor = Executor(processes, event_callback)
         
         self.signal_when_is_safe = True
         self.lambdas_are_safe = True
         self.thread_is_safe = True
+        
+        if processes:
+            self.executor = Executor(processes, event_callback)
 
         self._stop_event = Event()
         self._killed_event = Event()
@@ -245,13 +242,13 @@ class TopicMonitor(Thread):
         while not self._killed_event.isSet():
             while not self._stop_event.isSet():
                 
-                self.safety_cb()
+                self.thread_is_safe = self.signal_when_is_safe and self.lambdas_are_safe
                 
                 # check it is still published (None if not)
                 if self.hz_monitor is not None:
                     rate = self.hz_monitor.get_hz()
                     
-                    if rate is None and self.is_topic_published: #and not self.is_latch:
+                    if rate is None and self.is_topic_published:
                         self.is_topic_published = False
     
                         timer = rospy.Timer(rospy.Duration.from_sec(self.signal_when_timeout), cb, oneshot=True)
@@ -319,7 +316,7 @@ class TopicMonitor(Thread):
                         if process_lambda:     
                             self.execute(msg, config["process_indices"])
                             self.sat_expr_repeat_timer = self.kill_timer(self.sat_expr_repeat_timer, config["expr"]) 
-                        
+                            
                     self._lock.acquire()
                     self.sat_expr_repeat_timer.update({expr: rospy.Timer(rospy.Duration.from_sec(config["timeout"]), repeat_cb, oneshot=True)})
                     self._lock.release()  
@@ -338,15 +335,7 @@ class TopicMonitor(Thread):
                 
             if not self.sat_crit_expressions:
                 self.lambdas_are_safe = True
-                
-                
-    def kill_timer(self, timer_dict, expr):
-        self._lock.acquire()
-        timer_dict[expr].shutdown()
-        timer_dict.pop(expr)
-        self._lock.release()
-        return timer_dict
-        
+
 
     def published_cb(self, msg):
         if not self._stop_event.isSet():
@@ -357,19 +346,20 @@ class TopicMonitor(Thread):
             elif self.default_notifications:
                 self.event_callback("Topic %s is published " % (self.topic_name), "warn")
             self.execute(msg, self.process_indices)
+                
+                
+    def kill_timer(self, timer_dict, expr):
+        self._lock.acquire()
+        timer_dict[expr].shutdown()
+        timer_dict.pop(expr)
+        self._lock.release()
+        return timer_dict
             
             
     def execute(self, msg=None, process_indices=None):
         if self.processes:
             rospy.sleep(0.1) # needed when using slackeros
             self.executor.execute(msg, process_indices)
-            
-            
-    def safety_cb(self):
-        if self.signal_when_is_safe and self.lambdas_are_safe:
-            self.thread_is_safe = True
-        else:
-            self.thread_is_safe = False
             
             
     def stop_monitor(self):

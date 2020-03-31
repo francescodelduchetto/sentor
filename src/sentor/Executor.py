@@ -7,7 +7,6 @@ Created on Thu Nov 21 10:30:22 2019
 #####################################################################################
 import rospy, rosservice, rostopic, actionlib, subprocess
 import dynamic_reconfigure.client
-from copy import copy
 from threading import Lock
 
 
@@ -26,7 +25,6 @@ class Executor(object):
         for process in config:
             
             process_type = process.keys()[0]
-            print "Initialising process of type {}".format("\033[1m"+process_type+"\033[0m")
             
             if process_type == "call":
                 self.init_call(process)
@@ -280,9 +278,9 @@ class Executor(object):
         self.msg = msg
         
         if process_indices is None:
-            indices = copy(self.default_indices)
+            indices = self.default_indices
         else:
-            indices = copy(process_indices)
+            indices = process_indices
         
         for index in indices:
             rospy.sleep(0.1) # needed when using slackeros
