@@ -2,8 +2,8 @@
 Changelog for package sentor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.1.0 (2020-04-20)
+------------------
 * Merge pull request `#11 <https://github.com/LCAS/sentor/issues/11>`_ from adambinch/sentor_devel
   A significant change to the way sentor executes processes, and how args are specified in the config.
 * The format of the config is now backwards compatible
