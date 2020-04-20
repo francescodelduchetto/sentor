@@ -2,6 +2,98 @@
 Changelog for package sentor
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#11 <https://github.com/LCAS/sentor/issues/11>`_ from adambinch/sentor_devel
+  A significant change to the way sentor executes processes, and how args are specified in the config.
+* The format of the config is now backwards compatible
+  (sentor can handle two formats for the signal when condition).
+  The lindsey config has been reverted back to the previous version.
+* A few minor improvements
+* No longer using separate timers to handle critical and non-critical lambda expressions.
+  Reduces the number of threads used by sentor by the number of monitors specified in the config.
+* The safety callback in the topic monitor is called in the run function, rather than a separate timer.
+  Reduces the number of threads used by sentor by the number of monitors specified in the config.
+* Merge branch 'master' of github.com:LCAS/sentor into sentor_devel
+* Merge pull request `#12 <https://github.com/LCAS/sentor/issues/12>`_ from adambinch/fix
+  fix
+* fix
+* Added authorships
+* Adjustments to example config
+* The hz monitor is instantiated only when needed.
+* minor change
+* Merge branch 'master' of github.com:LCAS/sentor into sentor_devel
+* Merge pull request `#10 <https://github.com/LCAS/sentor/issues/10>`_ from adambinch/fix
+  small fix
+* Merge branch 'master' into fix
+* small fix
+* Merge branch 'master' of github.com:LCAS/sentor into sentor_devel
+* Specifying process indices for the signal when condition, and for each lambda expression, is now
+  the default method of executing processes.
+  The signal when condition now has child args `condition` (published/not published),
+  `timeout`, `safety_critical` `process_indices` and `repeat_exec`.
+  Each lambda expression now has child args `expression`,
+  `timeout`, `safety_critical` `when_published`, `process_indices` and `repeat_exec`.
+* Merge pull request `#9 <https://github.com/LCAS/sentor/issues/9>`_ from adambinch/sentor_mapping
+  Sentor can now map topic values.
+* minor change
+* Example config for the new features
+* Added an alternative mode `alt_exec` for executing processes. For a topic monitor, each lambda
+  expression listed now has an optional arg `process_indices` in which
+  you can specify which set of process you want to execute when that particular
+  lambda expression is satisfied.
+* fix
+* Added another process `reconf` - sentor can now dynamic reconfigure.
+  Updated config.
+  The hz monitor is now only instantiated when it is needed.
+* fix
+* Minoir change
+* Topic map can now be built as the standard deviation of topic args.
+  Added `stat` message field to custom topic map msg.
+  Some restructuring and minor improvements.
+* minor change
+* Minor improvements.
+* Added service `/sentor/get_maps` that returns all map data.
+  Changed default publishing/plotting rate of maps to zero which disables publishing/plotting of maps.
+  Changed the way the topic map is discretised as the previous method was causing the map to be displaced.
+  Some structural changes and improvements to code.
+* Merge branch 'sentor_mapping' of github.com:adambinch/sentor into sentor_mapping
+* Auto safety tagging is set to True by default.
+  Can now make topic maps with other statistics (min and max)
+  A few minor improvements
+* Auto safety tagging is set to True by default.
+  A few minor improvements
+* Created a topic map server to deal with writing/plotting the topic maps, and other services on the maps.
+  The topic map can be now be a sum of the topic args (as well as the weighted mean).
+  Real time plots (and the plot) rate, is now specified in the sentor launch file.
+* Topic maps are now saved in `home/.sentor_maps`.
+  Topic map message now gives extra information.
+* Improvement to the way the topic map is discretised.
+  Better example config.
+  Generated example topic map, saved in `sentor/maps`.
+* Default plotting rate is 1hz
+* minor fix
+* Sentor topic mapper can now generate real-time plots. New args in config.
+* Created a class (TopicMapPublisher) for publishing topic maps.
+  The services start/stop monitor now starts/stops the safety monitor, topic mapper and topic map publisher.
+  Made a service `/sentor/write_maps` for writing topic maps
+  Renamed messages `Map` and `MapArray` as `TopicMap` and `TopicMapArray`, respectively.
+  All sentor services with srv `Empty` now return an empty response (`EmptyResponse`)
+  Some other fixes and minor changes.
+* Improvement to the way the topic mapper handles exceptions.
+  Some other minor changes.
+* Sentor can now map topic values.
+  A numpy array is created as a discretized representation of the metric map.
+  When a topic message is obtained, a user defined argument on the message is evaluated.
+  A weighted mean of this value is stored in an element of the array, where the indices of the element is
+  given by the 'map to baselink' tf transform. As more data from a location is gathered, the weighted mean
+  (and thus the 'topic map'), is updated. Any region of this topic map that
+  has not been explored will contain nans.
+  Sentor can now store the weighted mean of a topic value in an element of an array.
+  The index of the element corresponds to a location in the map.
+  The index of the array is chosen by looking up the transform between map and baselink.
+* Contributors: Adam Binch, adambinch
+
 2.0.4 (2020-02-22)
 ------------------
 * Merge pull request `#8 <https://github.com/LCAS/sentor/issues/8>`_ from adambinch/sentor_devel
