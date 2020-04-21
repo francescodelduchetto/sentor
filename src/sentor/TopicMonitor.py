@@ -142,6 +142,7 @@ class TopicMonitor(Thread):
         self.signal_when = ""
         self.signal_when_timeout = self.timeout
         self.safety_critical = False
+        self.signal_when_def_nots = self.default_notifications
         self.process_indices = None
         self.repeat_exec = False
         
@@ -155,6 +156,8 @@ class TopicMonitor(Thread):
                 self.signal_when_timeout = self.signal_when_config["timeout"]
             if "safety_critical" in self.signal_when_config.keys():
                 self.safety_critical = self.signal_when_config["safety_critical"]
+            if "default_notifications" in self.signal_when_config.keys():
+                self.signal_when_def_nots = self.signal_when_config["default_notifications"]
             if "process_indices" in self.signal_when_config.keys():
                 self.process_indices = self.signal_when_config["process_indices"]
             if "repeat_exec" in self.signal_when_config.keys():
@@ -170,6 +173,7 @@ class TopicMonitor(Thread):
         lambda_config["expr"] = ""
         lambda_config["timeout"] = self.timeout
         lambda_config["safety_critical"] = False
+        lambda_config["default_notifications"] = self.default_notifications
         lambda_config["when_published"] = False
         lambda_config["process_indices"] = None
         lambda_config["repeat_exec"] = False
@@ -180,6 +184,8 @@ class TopicMonitor(Thread):
             lambda_config["timeout"] = signal_lambda["timeout"]
         if "safety_critical" in signal_lambda.keys():
             lambda_config["safety_critical"] = signal_lambda["safety_critical"]                
+        if "default_notifications" in signal_lambda.keys():
+            lambda_config["default_notifications"] = signal_lambda["default_notifications"]    
         if "when_published" in signal_lambda.keys():
             lambda_config["when_published"] = signal_lambda["when_published"]
         if "process_indices" in signal_lambda.keys():
@@ -230,9 +236,9 @@ class TopicMonitor(Thread):
             if self.signal_when.lower() == 'not published':
                 if self.safety_critical:
                     self.signal_when_is_safe = False
-                if self.default_notifications and self.safety_critical:
+                if self.signal_when_def_nots and self.safety_critical:
                     self.event_callback("SAFETY CRITICAL: Topic %s is not published anymore" % self.topic_name, "warn")
-                elif self.default_notifications:
+                elif self.signal_when_def_nots:
                     self.event_callback("Topic %s is not published anymore" % self.topic_name, "warn")
                 if not self.repeat_exec:
                     self.execute(process_indices=self.process_indices)
@@ -299,7 +305,7 @@ class TopicMonitor(Thread):
                             self.lambdas_are_safe = False
                             self.sat_crit_expressions.append(config["expr"])
                         
-                        if self.default_notifications:
+                        if config["default_notifications"]:
                             if config["safety_critical"]:
                                 self.event_callback("SAFETY CRITICAL: Expression '%s' for %s seconds on topic %s satisfied" % (expr, config["timeout"], self.topic_name), "warn", msg)
                             else:

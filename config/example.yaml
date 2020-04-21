@@ -3,18 +3,21 @@
     condition: "not published"
     timeout: 1.0
     safety_critical: True
+    default_notifications: True
     process_indices: [4]
     repeat_exec: True
   signal_lambdas:
   - expression: "lambda msg : msg.data == True"
     timeout: 0.1
     safety_critical: False
+    default_notifications: True
     when_published: False
     process_indices: [0,1]
     repeat_exec: False
   - expression: "lambda msg : msg.data == False"
     timeout: 5.0
     safety_critical: True
+    default_notifications: True
     when_published: False
     process_indices: [2,3]
     repeat_exec: False
@@ -44,18 +47,21 @@
     condition: "not published"
     timeout: 1.0
     safety_critical: True
+    default_notifications: True
     process_indices: [4]
     repeat_exec: True
   signal_lambdas:
   - expression: "lambda msg : msg.data == True"
     timeout: 0.1
     safety_critical: False
+    default_notifications: True
     when_published: False
     process_indices: [0,1]
     repeat_exec: False
   - expression: "lambda msg : msg.data == False"
     timeout: 5.0
     safety_critical: True
+    default_notifications: True
     when_published: False
     process_indices: [2,3]
     repeat_exec: False

@@ -5,6 +5,7 @@
   <description>The sentor package, to check that sensor messages get published</description>
 
   <maintainer email="fdelduchetto@lincoln.ac.uk">Francesco Del Duchetto</maintainer>
+  <maintainer email="abinch@sagarobotics.com">Adam Binch</maintainer>
   <maintainer email="marc@hanheide.net">Marc Hanheide</maintainer>
 
   <license>MIT</license>
@@ -12,6 +13,7 @@
   <url type="website"></url>
 
   <author email="fdelduchetto@lincoln.ac.uk">Francesco Del Duchetto</author>
+  <author email="abinch@sagarobotics.com">Adam Binch</author>
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>message_generation</build_depend>

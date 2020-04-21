@@ -6,14 +6,16 @@
 #    condition: "not published"
 #    timeout: 0.0
 #    safety_critical: False
+#    default_notifications: True
 #    process_indices: []
 #    repeat_exec: False
   signal_lambdas:
   - expression: "lambda msg: msg.feedback.route == 'WayPoint1'"
     timeout: 0.0
     safety_critical: True
+    default_notifications: True
     when_published: False
-#    process_indices: [0,1,2,3,4]
+#    process_indices: [0,1,2,3,4,5,6]
     repeat_exec: False
   execute:
   - lock_acquire:
@@ -54,12 +56,14 @@
 #    condition: "not published"
 #    timeout: 0.0
 #    safety_critical: False
+#    default_notifications: True
 #    process_indices: []
 #    repeat_exec: False
   signal_lambdas:
   - expression: "lambda msg: msg.feedback.route == 'WayPoint45'"
     timeout: 0.0
     safety_critical: False
+    default_notifications: True
     when_published: False
 #    process_indices: [0,1,2,3,4,5,6,7]
     repeat_exec: False
