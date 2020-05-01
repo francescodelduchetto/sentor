@@ -100,9 +100,10 @@ if __name__ == "__main__":
 
     event_pub = rospy.Publisher('/sentor/event', String, queue_size=10)
 
+    safe_operation_timeout = rospy.get_param("~safe_operation_timeout", "")    
     safety_pub_rate = rospy.get_param("~safety_pub_rate", "")    
     auto_safety_tagging = rospy.get_param("~auto_safety_tagging", "")        
-    safety_monitor = SafetyMonitor(safety_pub_rate, auto_safety_tagging, event_callback)   
+    safety_monitor = SafetyMonitor(safe_operation_timeout, safety_pub_rate, auto_safety_tagging, event_callback)   
 
     topic_mapping = False
     topic_monitors = []
