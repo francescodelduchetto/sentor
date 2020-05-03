@@ -3,6 +3,7 @@
 
   <arg name="topics" default=""/>
   <arg name="config_file" default=""/>
+  <arg name="safe_operation_timeout" default="10.0"/>
   <arg name="auto_safety_tagging" default="true"/>
   <arg name="safety_pub_rate" default="10.0"/>
   <arg name="map_pub_rate" default="0"/>
@@ -10,6 +11,7 @@
 
   <node pkg="sentor" type="sentor_node.py" name="sentor" output="screen">
     <param name="~config_file" value="$(arg config_file)" />
+    <param name="~safe_operation_timeout" value="$(arg safe_operation_timeout)" />
     <param name="~auto_safety_tagging" value="$(arg auto_safety_tagging)" />
     <param name="~safety_pub_rate" value="$(arg safety_pub_rate)" />
     <param name="~map_pub_rate" value="$(arg map_pub_rate)" />
