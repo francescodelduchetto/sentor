@@ -9,7 +9,7 @@ from __future__ import division
 import rospy
 from std_msgs.msg import Bool
 from std_srvs.srv import SetBool, SetBoolResponse
-from threading import Event, Lock
+from threading import Event
 
 
 class SafetyMonitor(object):
@@ -17,19 +17,21 @@ class SafetyMonitor(object):
     
     def __init__(self, timeout, rate, auto_tagging, event_cb):
         
-        self.timeout = timeout
+        if timeout > 0:
+            self.timeout = timeout
+        else:
+            self.timeout = 0.1
+        
         self.auto_tagging = auto_tagging
         self.event_cb = event_cb
         self.topic_monitors = []
         
         self.timer = None
-        
         self.safe_operation = False        
         self.safe_msg_sent = False
         self.unsafe_msg_sent = False
         
         self._stop_event = Event()
-        self._lock = Lock()
 
         self.safety_pub = rospy.Publisher('/safe_operation', Bool, queue_size=10)
         rospy.Timer(rospy.Duration(1.0/rate), self.safety_pub_cb)
@@ -48,7 +50,7 @@ class SafetyMonitor(object):
             if self.topic_monitors:
                 threads_are_safe = [monitor.thread_is_safe for monitor in self.topic_monitors]
                 
-                if all(threads_are_safe) and self.timer is None:
+                if self.auto_tagging and all(threads_are_safe) and self.timer is None:
                     self.timer = rospy.Timer(rospy.Duration.from_sec(self.timeout), self.timer_cb, oneshot=True)
                     
                 if not all(threads_are_safe):

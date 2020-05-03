@@ -3,7 +3,7 @@
 
   <arg name="topics" default=""/>
   <arg name="config_file" default=""/>
-  <arg name="safe_operation_timeout" default="10"/>
+  <arg name="safe_operation_timeout" default="10.0"/>
   <arg name="auto_safety_tagging" default="true"/>
   <arg name="safety_pub_rate" default="10.0"/>
   <arg name="map_pub_rate" default="0"/>

@@ -100,9 +100,9 @@ if __name__ == "__main__":
 
     event_pub = rospy.Publisher('/sentor/event', String, queue_size=10)
 
-    safe_operation_timeout = rospy.get_param("~safe_operation_timeout", "")    
-    safety_pub_rate = rospy.get_param("~safety_pub_rate", "")    
-    auto_safety_tagging = rospy.get_param("~auto_safety_tagging", "")        
+    safe_operation_timeout = rospy.get_param("~safe_operation_timeout", 10.0)    
+    safety_pub_rate = rospy.get_param("~safety_pub_rate", 10.0)    
+    auto_safety_tagging = rospy.get_param("~auto_safety_tagging", True)        
     safety_monitor = SafetyMonitor(safe_operation_timeout, safety_pub_rate, auto_safety_tagging, event_callback)   
 
     topic_mapping = False
@@ -150,8 +150,8 @@ if __name__ == "__main__":
     time.sleep(1)
     
     if topic_mapping:
-        map_pub_rate = rospy.get_param("~map_pub_rate", "") 
-        map_plt_rate = rospy.get_param("~map_plt_rate", "") 
+        map_pub_rate = rospy.get_param("~map_pub_rate", 0) 
+        map_plt_rate = rospy.get_param("~map_plt_rate", 0) 
         topic_map_server = TopicMapServer(topic_monitors, map_pub_rate, map_plt_rate)
 
     # start monitoring
