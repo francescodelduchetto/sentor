@@ -4,7 +4,8 @@
 
 """
 #####################################################################################
-import rospy, math
+from __future__ import division
+import rospy, math, numpy
 # imported the package `math` so that it can be used in the lambda expressions
 
 class ROSTopicFilter(object):
