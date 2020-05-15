@@ -29,6 +29,7 @@
       namespace: "/topological_navigation"
       package: "topological_navigation"
       action_spec: "GotoNodeAction"
+      wait: False
       goal_args:
       -  "goal.target = 'WayPoint45'"
   - reconf:

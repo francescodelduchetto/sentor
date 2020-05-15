@@ -154,6 +154,11 @@ class Executor(object):
             d["kwargs"]["goal"] = goal
             d["kwargs"]["verbose"] = self.is_verbose(process["action"])
             
+            if "wait" in process["action"].keys():
+                d["kwargs"]["wait"] = process["action"]["wait"]
+            else:
+                d["kwargs"]["wait"] = False
+            
             self.processes.append(d)
         
         except Exception as e:
@@ -310,7 +315,7 @@ class Executor(object):
         pub.publish(msg)
         
         
-    def action(self, spec, action_client, goal, verbose):
+    def action(self, spec, action_client, goal, verbose, wait):
         
         self.spec = spec
         self.goal = goal
@@ -318,7 +323,10 @@ class Executor(object):
         
         action_client.send_goal(goal, self.goal_cb)
         
-       
+        if wait:
+            action_client.wait_for_result()
+            
+        
     def sleep(self, duration):
         rospy.sleep(duration)
         
