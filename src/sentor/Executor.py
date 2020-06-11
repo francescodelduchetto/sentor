@@ -87,6 +87,7 @@ class Executor(object):
             
         except Exception as e:
             self.event_cb(self.init_err_str.format("call", str(e)), "warn")
+            self.processes.append("not_initialised")
             
             
     def init_publish(self, process):
@@ -119,6 +120,7 @@ class Executor(object):
             
         except Exception as e:
             self.event_cb(self.init_err_str.format("publish", str(e)), "warn")
+            self.processes.append("not_initialised")
             
             
     def init_action(self, process):
@@ -163,6 +165,7 @@ class Executor(object):
         
         except Exception as e:
             self.event_cb(self.init_err_str.format("action", str(e)), "warn")
+            self.processes.append("not_initialised")
             
         
     def init_sleep(self, process):
@@ -179,7 +182,8 @@ class Executor(object):
             self.processes.append(d)
 
         except Exception as e:
-            self.event_cb(self.init_err_str.format("sleep", str(e)), "warn")            
+            self.event_cb(self.init_err_str.format("sleep", str(e)), "warn")
+            self.processes.append("not_initialised")            
             
             
     def init_shell(self, process):
@@ -197,6 +201,7 @@ class Executor(object):
 
         except Exception as e:
             self.event_cb(self.init_err_str.format("shell", str(e)), "warn")
+            self.processes.append("not_initialised")
 
 
     def init_log(self, process):
@@ -219,6 +224,7 @@ class Executor(object):
 
         except Exception as e:
             self.event_cb(self.init_err_str.format("log", str(e)), "warn")
+            self.processes.append("not_initialised")
             
             
     def init_reconf(self, process):
@@ -236,6 +242,7 @@ class Executor(object):
 
         except Exception as e:
             self.event_cb(self.init_err_str.format("reconf", str(e)), "warn")
+            self.processes.append("not_initialised")
 
 
     def init_lock_acquire(self, process):
@@ -251,6 +258,7 @@ class Executor(object):
 
         except Exception as e:
             self.event_cb(self.init_err_str.format("lock_acquire", str(e)), "warn")
+            self.processes.append("not_initialised")
             
 
     def init_lock_release(self, process):
@@ -266,6 +274,7 @@ class Executor(object):
 
         except Exception as e:
             self.event_cb(self.init_err_str.format("lock_release", str(e)), "warn")
+            self.processes.append("not_initialised")
             
             
     def is_verbose(self, process):
@@ -289,7 +298,11 @@ class Executor(object):
         
         for index in indices:
             rospy.sleep(0.1) # needed when using slackeros
+            
             process = self.processes[index]
+            if process == "not_initialised":
+                continue
+            
             try:
                 if process["verbose"] and "def_msg" in process.keys():
                     self.event_cb(process["def_msg"][0], process["def_msg"][1], process["def_msg"][2])
