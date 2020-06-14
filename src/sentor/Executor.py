@@ -55,6 +55,7 @@ class Executor(object):
                 
             else:
                 self.event_cb("Process of type '{}' not supported".format(process_type), "warn")
+                self.processes.append("not_initialised")
         
         self.default_indices = range(len(self.processes))        
         print "\n"
@@ -95,7 +96,7 @@ class Executor(object):
         try:
             topic_name = process["publish"]["topic_name"]
             
-            if "topic_latched" in process["publish"].keys():
+            if "topic_latched" in process["publish"]:
                 topic_latched = process["publish"]["topic_latched"]
             else:
                 topic_latched = False
@@ -156,7 +157,7 @@ class Executor(object):
             d["kwargs"]["goal"] = goal
             d["kwargs"]["verbose"] = self.is_verbose(process["action"])
             
-            if "wait" in process["action"].keys():
+            if "wait" in process["action"]:
                 d["kwargs"]["wait"] = process["action"]["wait"]
             else:
                 d["kwargs"]["wait"] = False
@@ -215,7 +216,7 @@ class Executor(object):
             d["kwargs"]["message"] = process["log"]["message"]
             d["kwargs"]["level"] = process["log"]["level"]
             
-            if "msg_args" in process["log"].keys():
+            if "msg_args" in process["log"]:
                 d["kwargs"]["msg_args"] = process["log"]["msg_args"]
             else:
                 d["kwargs"]["msg_args"] = None                
@@ -279,7 +280,7 @@ class Executor(object):
             
     def is_verbose(self, process):
         
-        if "verbose" in process.keys():
+        if "verbose" in process:
             verbose = process["verbose"]
         else:
             verbose = True
@@ -304,7 +305,7 @@ class Executor(object):
                 continue
             
             try:
-                if process["verbose"] and "def_msg" in process.keys():
+                if process["verbose"] and "def_msg" in process:
                     self.event_cb(process["def_msg"][0], process["def_msg"][1], process["def_msg"][2])
                     
                 kwargs = process["kwargs"]            
