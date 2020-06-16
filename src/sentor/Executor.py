@@ -55,6 +55,7 @@ class Executor(object):
                 
             else:
                 self.event_cb("Process of type '{}' not supported".format(process_type), "warn")
+                self.processes.append("not_initialised")
         
         self.default_indices = range(len(self.processes))        
         print "\n"
@@ -87,6 +88,7 @@ class Executor(object):
             
         except Exception as e:
             self.event_cb(self.init_err_str.format("call", str(e)), "warn")
+            self.processes.append("not_initialised")
             
             
     def init_publish(self, process):
@@ -94,7 +96,7 @@ class Executor(object):
         try:
             topic_name = process["publish"]["topic_name"]
             
-            if "topic_latched" in process["publish"].keys():
+            if "topic_latched" in process["publish"]:
                 topic_latched = process["publish"]["topic_latched"]
             else:
                 topic_latched = False
@@ -119,6 +121,7 @@ class Executor(object):
             
         except Exception as e:
             self.event_cb(self.init_err_str.format("publish", str(e)), "warn")
+            self.processes.append("not_initialised")
             
             
     def init_action(self, process):
@@ -154,7 +157,7 @@ class Executor(object):
             d["kwargs"]["goal"] = goal
             d["kwargs"]["verbose"] = self.is_verbose(process["action"])
             
-            if "wait" in process["action"].keys():
+            if "wait" in process["action"]:
                 d["kwargs"]["wait"] = process["action"]["wait"]
             else:
                 d["kwargs"]["wait"] = False
@@ -163,6 +166,7 @@ class Executor(object):
         
         except Exception as e:
             self.event_cb(self.init_err_str.format("action", str(e)), "warn")
+            self.processes.append("not_initialised")
             
         
     def init_sleep(self, process):
@@ -179,7 +183,8 @@ class Executor(object):
             self.processes.append(d)
 
         except Exception as e:
-            self.event_cb(self.init_err_str.format("sleep", str(e)), "warn")            
+            self.event_cb(self.init_err_str.format("sleep", str(e)), "warn")
+            self.processes.append("not_initialised")            
             
             
     def init_shell(self, process):
@@ -197,6 +202,7 @@ class Executor(object):
 
         except Exception as e:
             self.event_cb(self.init_err_str.format("shell", str(e)), "warn")
+            self.processes.append("not_initialised")
 
 
     def init_log(self, process):
@@ -210,7 +216,7 @@ class Executor(object):
             d["kwargs"]["message"] = process["log"]["message"]
             d["kwargs"]["level"] = process["log"]["level"]
             
-            if "msg_args" in process["log"].keys():
+            if "msg_args" in process["log"]:
                 d["kwargs"]["msg_args"] = process["log"]["msg_args"]
             else:
                 d["kwargs"]["msg_args"] = None                
@@ -219,6 +225,7 @@ class Executor(object):
 
         except Exception as e:
             self.event_cb(self.init_err_str.format("log", str(e)), "warn")
+            self.processes.append("not_initialised")
             
             
     def init_reconf(self, process):
@@ -236,6 +243,7 @@ class Executor(object):
 
         except Exception as e:
             self.event_cb(self.init_err_str.format("reconf", str(e)), "warn")
+            self.processes.append("not_initialised")
 
 
     def init_lock_acquire(self, process):
@@ -251,6 +259,7 @@ class Executor(object):
 
         except Exception as e:
             self.event_cb(self.init_err_str.format("lock_acquire", str(e)), "warn")
+            self.processes.append("not_initialised")
             
 
     def init_lock_release(self, process):
@@ -266,11 +275,12 @@ class Executor(object):
 
         except Exception as e:
             self.event_cb(self.init_err_str.format("lock_release", str(e)), "warn")
+            self.processes.append("not_initialised")
             
             
     def is_verbose(self, process):
         
-        if "verbose" in process.keys():
+        if "verbose" in process:
             verbose = process["verbose"]
         else:
             verbose = True
@@ -289,9 +299,13 @@ class Executor(object):
         
         for index in indices:
             rospy.sleep(0.1) # needed when using slackeros
+            
             process = self.processes[index]
+            if process == "not_initialised":
+                continue
+            
             try:
-                if process["verbose"] and "def_msg" in process.keys():
+                if process["verbose"] and "def_msg" in process:
                     self.event_cb(process["def_msg"][0], process["def_msg"][1], process["def_msg"][2])
                     
                 kwargs = process["kwargs"]            

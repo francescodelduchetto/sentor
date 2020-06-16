@@ -90,7 +90,7 @@ class TopicMonitor(Thread):
         if self.signal_when.lower() == 'not published':
             hz_monitor_required = True
         for signal_lambda in self.signal_lambdas_config:
-             if "when_published" in signal_lambda.keys():
+             if "when_published" in signal_lambda:
                  if signal_lambda["when_published"]:
                      hz_monitor_required = True
         
@@ -150,17 +150,17 @@ class TopicMonitor(Thread):
             self.signal_when = self.signal_when_config
         elif type(self.signal_when_config) is dict:
         
-            if "condition" in self.signal_when_config.keys():
+            if "condition" in self.signal_when_config:
                 self.signal_when = self.signal_when_config["condition"]
-            if "timeout" in self.signal_when_config.keys():
+            if "timeout" in self.signal_when_config:
                 self.signal_when_timeout = self.signal_when_config["timeout"]
-            if "safety_critical" in self.signal_when_config.keys():
+            if "safety_critical" in self.signal_when_config:
                 self.safety_critical = self.signal_when_config["safety_critical"]
-            if "default_notifications" in self.signal_when_config.keys():
+            if "default_notifications" in self.signal_when_config:
                 self.signal_when_def_nots = self.signal_when_config["default_notifications"]
-            if "process_indices" in self.signal_when_config.keys():
+            if "process_indices" in self.signal_when_config:
                 self.process_indices = self.signal_when_config["process_indices"]
-            if "repeat_exec" in self.signal_when_config.keys():
+            if "repeat_exec" in self.signal_when_config:
                 self.repeat_exec = self.signal_when_config["repeat_exec"]
             
         if self.signal_when_timeout <= 0:
@@ -178,19 +178,19 @@ class TopicMonitor(Thread):
         lambda_config["process_indices"] = None
         lambda_config["repeat_exec"] = False
         
-        if "expression" in signal_lambda.keys():
+        if "expression" in signal_lambda:
             lambda_config["expr"] = signal_lambda["expression"]
-        if "timeout" in signal_lambda.keys():
+        if "timeout" in signal_lambda:
             lambda_config["timeout"] = signal_lambda["timeout"]
-        if "safety_critical" in signal_lambda.keys():
+        if "safety_critical" in signal_lambda:
             lambda_config["safety_critical"] = signal_lambda["safety_critical"]                
-        if "default_notifications" in signal_lambda.keys():
+        if "default_notifications" in signal_lambda:
             lambda_config["default_notifications"] = signal_lambda["default_notifications"]    
-        if "when_published" in signal_lambda.keys():
+        if "when_published" in signal_lambda:
             lambda_config["when_published"] = signal_lambda["when_published"]
-        if "process_indices" in signal_lambda.keys():
+        if "process_indices" in signal_lambda:
             lambda_config["process_indices"] = signal_lambda["process_indices"]
-        if "repeat_exec" in signal_lambda.keys():
+        if "repeat_exec" in signal_lambda:
             lambda_config["repeat_exec"] = signal_lambda["repeat_exec"]      
             
         if lambda_config["timeout"] <= 0:
@@ -296,7 +296,7 @@ class TopicMonitor(Thread):
             return process_lambda, timer_dict
             
         if not self._stop_event.isSet():    
-            if not expr in self.sat_expressions_timer.keys():
+            if not expr in self.sat_expressions_timer:
                 
                 def cb(_):
                     process_lambda, self.sat_expressions_timer = ProcessLambda(self.sat_expressions_timer)
@@ -319,7 +319,7 @@ class TopicMonitor(Thread):
                 self._lock.release()
             
             if config["repeat_exec"]:
-                if not expr in self.sat_expr_repeat_timer.keys():
+                if not expr in self.sat_expr_repeat_timer:
                     
                     def repeat_cb(_):
                         process_lambda, self.sat_expr_repeat_timer = ProcessLambda(self.sat_expr_repeat_timer)
@@ -334,10 +334,10 @@ class TopicMonitor(Thread):
 
     def lambda_unsatisfied_cb(self, expr):
         if not self._stop_event.isSet():            
-            if expr in self.sat_expressions_timer.keys():
+            if expr in self.sat_expressions_timer:
                 self.sat_expressions_timer = self.kill_timer(self.sat_expressions_timer, expr) 
                 
-            if expr in self.sat_expr_repeat_timer.keys():
+            if expr in self.sat_expr_repeat_timer:
                 self.sat_expr_repeat_timer = self.kill_timer(self.sat_expr_repeat_timer, expr) 
                 
             if expr in self.sat_crit_expressions:
