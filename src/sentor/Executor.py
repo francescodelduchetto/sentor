@@ -141,6 +141,7 @@ class Executor(object):
             if not wait:
                 e = "Action server with namespace '{}' and action spec '{}' not available".format(namespace, spec)
                 self.event_cb(self.init_err_str.format("action", e), "warn")
+                self.processes.append("not_initialised")
                 return
     
             goal = goal_class()
