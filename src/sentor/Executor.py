@@ -53,6 +53,9 @@ class Executor(object):
             elif process_type == "lock_release":
                 self.init_lock_release(process)
                 
+            elif process_type == "custom":
+                self.init_custom(process)
+                
             else:
                 self.event_cb("Process of type '{}' not supported".format(process_type), "warn")
                 self.processes.append("not_initialised")
@@ -279,6 +282,40 @@ class Executor(object):
             self.processes.append("not_initialised")
             
             
+    def init_custom(self, process):
+        
+        try:
+            package = process["custom"]["package"]
+            name = process["custom"]["name"]
+            
+            exec("from {}.{} import {} as custom_proc".format(package, name, name))
+            
+            if "init_args" in process["custom"]:
+                args = process["custom"]["init_args"] 
+                cp = custom_proc(*args)
+            else:
+                cp = custom_proc()
+            
+            d = {}
+            d["name"] = "custom"
+            d["verbose"] = self.is_verbose(process["custom"])
+            d["def_msg"] = ("Executing custom process '{}' from package '{}'".format(name, package), "info", "")
+            d["func"] = "self.custom(**kwargs)"
+            d["kwargs"] = {}
+            d["kwargs"]["cp"] = cp
+            
+            if "run_args" in process["custom"]:
+                d["kwargs"]["args"] = process["custom"]["run_args"]
+            else:
+                d["kwargs"]["args"] = None
+            
+            self.processes.append(d)
+            
+        except Exception as e:
+            self.event_cb(self.init_err_str.format("custom", str(e)), "warn")
+            self.processes.append("not_initialised")
+        
+        
     def is_verbose(self, process):
         
         if "verbose" in process:
@@ -383,6 +420,14 @@ class Executor(object):
 
     def lock_release(self):
         self._lock.release()
+        
+        
+    def custom(self, cp, args):
+        
+        if args is not None:
+            cp.run(*args)
+        else:
+            cp.run()
          
         
     def goal_cb(self, status, result):
