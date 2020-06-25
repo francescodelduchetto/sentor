@@ -12,14 +12,14 @@
     safety_critical: False
     default_notifications: True
     when_published: False
-    process_indices: [0,1]
+    process_indices: [0,1,5]
     repeat_exec: False
   - expression: "lambda msg : msg.data == False"
     timeout: 5.0
     safety_critical: True
     default_notifications: True
     when_published: False
-    process_indices: [2,3]
+    process_indices: [2,3,5]
     repeat_exec: False
   execute:
   - log:
@@ -37,6 +37,13 @@
   - log:
       message: "expression 1 is not published"
       level: "warn"
+  - custom:
+      package: "rasberry_uv"
+      name: myClass
+      init_args:
+      - "Hello"
+      run_args:
+      - "World"
   timeout: 0.1
   default_notifications: True
   include: True
