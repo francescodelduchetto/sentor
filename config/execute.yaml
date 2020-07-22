@@ -10,7 +10,7 @@
 #    process_indices: []
 #    repeat_exec: False
   signal_lambdas:
-  - expression: "lambda msg: msg.feedback.route == 'WayPoint1'"
+  - expression: "lambda msg: msg.feedback.route == 't1-r1-c1'"
     timeout: 0.0
     safety_critical: True
     default_notifications: True
@@ -31,7 +31,7 @@
       action_spec: "GotoNodeAction"
       wait: False
       goal_args:
-      -  "goal.target = 'WayPoint45'"
+      -  "goal.target = 't1-r1-c2'"
   - reconf:
       verbose: True
       params:
@@ -61,7 +61,7 @@
 #    process_indices: []
 #    repeat_exec: False
   signal_lambdas:
-  - expression: "lambda msg: msg.feedback.route == 'WayPoint45'"
+  - expression: "lambda msg: msg.feedback.route == 't1-r1-c2'"
     timeout: 0.0
     safety_critical: False
     default_notifications: True
@@ -81,6 +81,7 @@
   - call:
       verbose: True
       service_name: "/sentor/set_safety_tag"
+      timeout: 2.0
       service_args:
       -  "req.data = True"
   - log:
@@ -89,8 +90,11 @@
   - call:
       verbose: True
       service_name: "/gazebo/set_model_state"
+      timeout: 2.0
       service_args:
       -  "req.model_state.model_name = 'thorvald_ii'"
+      -  "req.model_state.pose.position.x = 18.0"
+      -  "req.model_state.pose.position.y = -7.0"
       -  "req.model_state.pose.orientation.w = 1.0"
   - sleep:
       verbose: True
@@ -104,6 +108,8 @@
       topic_latched: False
       topic_args:
       -  "msg.header.frame_id = '/map'"
+      -  "msg.pose.pose.position.x = 18.0"
+      -  "msg.pose.pose.position.y = -7.0"
       -  "msg.pose.pose.orientation.w = 1.0"
   timeout: 0.0
   default_notifications: True
