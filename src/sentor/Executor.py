@@ -73,10 +73,7 @@ class Executor(object):
             if "timeout" in process["call"]:
                 timeout_srv = process["call"]["timeout"]
             else:
-                timeout_srv = 2.0
-
-            rospy.wait_for_service(service_name, timeout=10.0)
-            service_client = rospy.ServiceProxy(service_name, service_class)
+                timeout_srv = 1.0
             
             req = service_class._request_class()
             for arg in process["call"]["service_args"]: exec(arg)
@@ -88,7 +85,7 @@ class Executor(object):
             d["func"] = "self.call(**kwargs)"
             d["kwargs"] = {}
             d["kwargs"]["service_name"] = service_name
-            d["kwargs"]["service_client"] = service_client
+            d["kwargs"]["service_class"] = service_class
             d["kwargs"]["req"] = req
             d["kwargs"]["verbose"] = self.is_verbose(process["call"])
             d["kwargs"]["timeout_srv"] = timeout_srv
@@ -146,7 +143,7 @@ class Executor(object):
             rospy.sleep(0.5)
             
             action_client = actionlib.SimpleActionClient(namespace, action_spec)
-            wait = action_client.wait_for_server(rospy.Duration(10.0))
+            wait = action_client.wait_for_server(rospy.Duration(5.0))
             if not wait:
                 e = "Action server with namespace '{}' and action spec '{}' not available".format(namespace, spec)
                 self.event_cb(self.init_err_str.format("action", e), "warn")
@@ -359,9 +356,10 @@ class Executor(object):
                 self.event_cb("Unable to execute process of type '{}': {}".format(process["name"], str(e)), "warn")
             
 
-    def call(self, service_name, service_client, req, verbose, timeout_srv):
+    def call(self, service_name, service_class, req, verbose, timeout_srv):
         
         rospy.wait_for_service(service_name, timeout=timeout_srv)
+        service_client = rospy.ServiceProxy(service_name, service_class)
         resp = service_client(req)
         
         if verbose and resp.success:
