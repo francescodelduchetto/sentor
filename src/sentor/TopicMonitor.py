@@ -237,7 +237,7 @@ class TopicMonitor(Thread):
                 if self.safety_critical:
                     self.signal_when_is_safe = False
                 if self.signal_when_def_nots and self.safety_critical:
-                    self.event_callback("SAFETY CRITICAL: Topic %s is not published anymore" % self.topic_name, "warn")
+                    self.event_callback("SAFETY CRITICAL: Topic %s is not published anymore" % self.topic_name, "error")
                 elif self.signal_when_def_nots:
                     self.event_callback("Topic %s is not published anymore" % self.topic_name, "warn")
                 if not self.repeat_exec:
@@ -307,7 +307,7 @@ class TopicMonitor(Thread):
                         
                         if config["default_notifications"]:
                             if config["safety_critical"]:
-                                self.event_callback("SAFETY CRITICAL: Expression '%s' for %s seconds on topic %s satisfied" % (expr, config["timeout"], self.topic_name), "warn", msg)
+                                self.event_callback("SAFETY CRITICAL: Expression '%s' for %s seconds on topic %s satisfied" % (expr, config["timeout"], self.topic_name), "error", msg)
                             else:
                                 self.event_callback("Expression '%s' for %s seconds on topic %s satisfied" % (expr, config["timeout"], self.topic_name), "warn", msg)
                         
@@ -352,10 +352,10 @@ class TopicMonitor(Thread):
             if self.safety_critical:
                 self.signal_when_is_safe = False
             if self.default_notifications and self.safety_critical:
-                self.event_callback("SAFETY CRITICAL: Topic %s is published " % (self.topic_name), "warn")
+                self.event_callback("SAFETY CRITICAL: Topic %s is published " % (self.topic_name), "error")
             elif self.default_notifications:
                 self.event_callback("Topic %s is published " % (self.topic_name), "warn")
-            self.execute(msg, self.process_indices)
+            #self.execute(msg, self.process_indices)
                 
                 
     def kill_timer(self, timer_dict, expr):
