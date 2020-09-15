@@ -12,6 +12,7 @@ from sentor.TopicMapper import TopicMapper
 
 from threading import Thread, Event, Lock
 import rostopic
+import rosgraph
 import rospy
 import time
 
@@ -45,8 +46,13 @@ class TopicMonitor(Thread):
             self.timeout = 0.1
         self.default_notifications = default_notifications
         self.map = _map
-        self.event_callback = event_callback
+        self._event_callback = event_callback
+        self.nodes = []
         
+        self._stop_event = Event()
+        self._killed_event = Event()
+        self._lock = Lock()
+
         self.process_signal_config()        
         self.sat_crit_expressions = []
         self.sat_expressions_timer = {}
@@ -62,11 +68,8 @@ class TopicMonitor(Thread):
         self.thread_is_safe = True
         
         if processes:
-            self.executor = Executor(processes, event_callback)
+            self.executor = Executor(processes, self.event_callback)
 
-        self._stop_event = Event()
-        self._killed_event = Event()
-        self._lock = Lock()
 
 
     def _instantiate_monitors(self):
@@ -76,7 +79,7 @@ class TopicMonitor(Thread):
             msg_class, real_topic, _ = rostopic.get_topic_class(self.topic_name, blocking=False)
             topic_type, _, _ = rostopic.get_topic_type(self.topic_name, blocking=False)
         except rostopic.ROSTopicException as e:
-            self.event_callback("Topic %s type cannot be determined, or ROS master cannot be contacted" % self.topic_name)
+            self.event_callback("Topic %s type cannot be determined, or ROS master cannot be contacted" % self.topic_name, "warn")
             return False
 
         if real_topic is None:
@@ -84,7 +87,20 @@ class TopicMonitor(Thread):
             if self.signal_when.lower() == 'not published' and self.safety_critical:
                 self.signal_when_is_safe = False
             return False
-        
+
+        # find out topic publishing nodes
+        master = rosgraph.Master(rospy.get_name())
+        try:
+            pubs, _ = rostopic.get_topic_list(master=master)
+            # filter based on topic
+            pubs = [x for x in pubs if x[0] == real_topic]
+            nodes = []
+            for _, _, _nodes in pubs:
+                nodes += _nodes
+            self.nodes = nodes
+        except socket.error:
+            self.event_callback("Could not retrieve nodes for topic %s" % self.topic_name, "warn")
+
         # Do we need a hz monitor?
         hz_monitor_required = False
         if self.signal_when.lower() == 'not published':
@@ -135,7 +151,9 @@ class TopicMonitor(Thread):
         self.is_instantiated = True
 
         return True
-        
+
+    def event_callback(self, string, type, msg=""):
+        self._event_callback(string, type, msg, self.nodes, self.topic_name)
         
     def process_signal_config(self):
         

@@ -13,6 +13,7 @@ add_message_files(
   FILES
   TopicMap.msg
   TopicMapArray.msg
+  SentorEvent.msg
 )
 
 add_service_files(

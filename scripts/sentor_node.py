@@ -9,6 +9,7 @@ from sentor.TopicMonitor import TopicMonitor
 from sentor.SafetyMonitor import SafetyMonitor
 from sentor.TopicMapServer import TopicMapServer
 from std_msgs.msg import String
+from sentor.msg import SentorEvent
 from std_srvs.srv import Empty, EmptyResponse
 import pprint
 import signal
@@ -27,6 +28,7 @@ satisfied_filters_indexes = []
 topic_monitors = []
 
 event_pub = None
+rich_event_pub = None
 
 def __signal_handler(signum, frame):
     def kill_monitors():
@@ -69,7 +71,7 @@ def start_monitoring(_):
     return ans
     
 
-def event_callback(string, type, msg=""):
+def event_callback(string, type, msg="", nodes=[], topic=""):
     if type == "info":
         rospy.loginfo(string + '\n' + str(msg))
     elif type == "warn":
@@ -79,6 +81,16 @@ def event_callback(string, type, msg=""):
 
     if event_pub is not None:
         event_pub.publish(String("%s: %s" % (type, string)))
+
+    if rich_event_pub is not None:
+        event = SentorEvent()
+        event.header.stamp = rospy.Time.now()
+        event.level = SentorEvent.INFO if type == "info" else SentorEvent.WARN if type == "warn" else SentorEvent.ERROR
+        event.message = string
+        event.nodes = nodes
+        event.topic = topic
+        rich_event_pub.publish(event)
+
 ##########################################################################################
     
 
@@ -99,6 +111,7 @@ if __name__ == "__main__":
     start_srv = rospy.Service('/sentor/start_monitor', Empty, start_monitoring)
 
     event_pub = rospy.Publisher('/sentor/event', String, queue_size=10)
+    rich_event_pub = rospy.Publisher('/sentor/rich_event', SentorEvent, queue_size=10)
 
     safe_operation_timeout = rospy.get_param("~safe_operation_timeout", 10.0)    
     safety_pub_rate = rospy.get_param("~safety_pub_rate", 10.0)    
